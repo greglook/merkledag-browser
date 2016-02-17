@@ -11,7 +11,8 @@
    [lein-cljsbuild "1.1.2" :exclusions [[org.clojure/clojure]]]]
 
   :dependencies
-  [[org.clojure/clojure "1.7.0"]
+  [[cljs-ajax "0.5.3"]
+   [org.clojure/clojure "1.7.0"]
    [org.clojure/clojurescript "1.7.170"]
    [org.clojure/core.async "0.2.374"
     :exclusions [org.clojure/tools.reader]]

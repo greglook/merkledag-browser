@@ -1,5 +1,8 @@
 (ns merkledag-browser.core
-  (:require [reagent.core :as reagent :refer [atom]]))
+  (:require
+    [ajax.core :as ajax]
+    [ajax.edn :refer [edn-response-format]]
+    [reagent.core :as reagent]))
 
 (enable-console-print!)
 
@@ -7,13 +10,38 @@
 
 ;; define your app data so that it doesn't get over-written on reload
 
-(defonce app-state (atom {:text "Hello world!"}))
+(defonce app-state
+  (reagent/atom {:blocks []}))
+
 
 (defn hello-world []
   [:h1 (:text @app-state)])
 
-(reagent/render-component [hello-world]
-                          (. js/document (getElementById "app")))
+
+(defn block-list
+  [blocks]
+  [:ul
+   (for [block blocks]
+     ^{:key (:id block)}
+     [:li [:strong (str (:id block))] " " [:span "(" (:size block) " bytes)"]])])
+
+
+(defn list-blocks-view
+  []
+  [:div
+   [:h1 "Blocks"]
+   [:input {:type "button" :value "Refresh"
+            :on-click (fn refresh-blocks []
+                        (ajax/GET "http://localhost:8080/blocks/"
+                          {:response-format (edn-response-format)
+                           :handler #(do (prn %) (swap! app-state assoc :blocks (:entries %)))
+                           :error-handler #(js/alert (str "Failed to query blocks: " (pr-str %)))}))}]
+   [block-list (:blocks @app-state)]])
+
+
+(reagent/render-component
+  [list-blocks-view]
+  (. js/document (getElementById "app")))
 
 
 (defn on-js-reload []
