@@ -6,10 +6,7 @@
 
 (enable-console-print!)
 
-(println "Edits to this text should show up in your developer console.")
-
-;; define your app data so that it doesn't get over-written on reload
-
+; TODO: probably don't want app-wide state yet
 (defonce app-state
   (reagent/atom {:blocks []}))
 
@@ -39,6 +36,7 @@
    [block-list (:blocks @app-state)]])
 
 
+; TODO: use secretary for routing, define view multimethod based on :page in the route?
 (reagent/render-component
   [list-blocks-view]
   (. js/document (getElementById "app")))
