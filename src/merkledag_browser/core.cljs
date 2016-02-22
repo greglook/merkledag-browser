@@ -1,18 +1,45 @@
 (ns merkledag-browser.core
+  (:require-macros
+    [secretary.core :refer [defroute]])
   (:require
     [ajax.core :as ajax]
     [ajax.edn :refer [edn-response-format]]
-    [reagent.core :as reagent]))
+    [goog.events :as events]
+    [goog.history.EventType :as EventType]
+    [reagent.core :as reagent]
+    [secretary.core :as secretary])
+  (:import
+    goog.History))
+
+
+(defonce app-state
+  (reagent/atom
+    {:server-url "http://localhost:8080"
+     :view [:home]
+     :blocks []}))
+
 
 (enable-console-print!)
 
-; TODO: probably don't want app-wide state yet
-(defonce app-state
-  (reagent/atom {:blocks []}))
+
+(defn hook-browser-navigation!
+  []
+  (doto (History.)
+    (events/listen
+      EventType/NAVIGATE
+      (fn [event]
+        (secretary/dispatch! (.-token event))))
+    (.setEnabled true)))
 
 
-(defn hello-world []
-  [:h1 (:text @app-state)])
+(defn define-app-routes!
+  []
+  (secretary/set-config! :prefix "#")
+  (defroute "/" []
+    (swap! app-state assoc :view [:home]))
+  (defroute "/node/:id" [id]
+    ; TODO: parse id as a multihash
+    (swap! app-state assoc :view [:node/show id])))
 
 
 (defn block-list
@@ -20,7 +47,8 @@
   [:ul
    (for [block blocks]
      ^{:key (:id block)}
-     [:li [:strong (str (:id block))] " " [:span "(" (:size block) " bytes)"]])])
+     [:li [:strong [:a {:href (str "#/node/" (:id block))} (str (:id block))]]
+      " " [:span "(" (:size block) " bytes)"]])])
 
 
 (defn list-blocks-view
@@ -29,17 +57,31 @@
    [:h1 "Blocks"]
    [:input {:type "button" :value "Refresh"
             :on-click (fn refresh-blocks []
-                        (ajax/GET "http://localhost:8080/blocks/"
+                        (ajax/GET (str (:server-url @app-state) "/blocks/")
                           {:response-format (edn-response-format)
                            :handler #(do (prn %) (swap! app-state assoc :blocks (:entries %)))
                            :error-handler #(js/alert (str "Failed to query blocks: " (pr-str %)))}))}]
    [block-list (:blocks @app-state)]])
 
 
-; TODO: use secretary for routing, define view multimethod based on :page in the route?
-(reagent/render-component
-  [list-blocks-view]
-  (. js/document (getElementById "app")))
+(defn show-node-view
+  [id]
+  ; TODO: fire off ajax request here?
+  [:div
+   [:h1 id]
+   [:a {:href "#/"} "Home"]])
+
+
+(defn current-page-view
+  []
+  (let [view (:view @app-state)]
+    (case (first view)
+      :home [list-blocks-view]
+      :node/show [show-node-view (second view)]
+      [:div
+       [:h1 "???"]
+       [:p "Unknown view: " [:code (pr-str view)]]])))
+
 
 
 (defn on-js-reload []
@@ -47,3 +89,15 @@
   ;; your application
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
 )
+
+
+(defn ^:export main
+  []
+  (define-app-routes!)
+  (hook-browser-navigation!)
+  (reagent/render-component
+    [current-page-view]
+    (. js/document (getElementById "app"))))
+
+
+(defonce setup (main))

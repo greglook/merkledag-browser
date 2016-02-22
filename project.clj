@@ -16,7 +16,8 @@
    [org.clojure/clojurescript "1.7.170"]
    [org.clojure/core.async "0.2.374"
     :exclusions [org.clojure/tools.reader]]
-   [reagent "0.5.1"]]
+   [reagent "0.5.1"]
+   [secretary "1.2.3"]]
 
   :source-paths ["src"]
 
