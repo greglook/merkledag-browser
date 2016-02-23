@@ -17,6 +17,7 @@
    [org.clojure/core.async "0.2.374"
     :exclusions [org.clojure/tools.reader]]
    [reagent "0.5.1"]
+   [re-frame "0.7.0-alpha-2"]
    [secretary "1.2.3"]]
 
   :hooks [leiningen.cljsbuild]

@@ -6,17 +6,14 @@
     [ajax.edn :refer [edn-response-format]]
     [goog.events :as events]
     [goog.history.EventType :as EventType]
+    [merkledag.browser.handlers]
+    [merkledag.browser.queries]
+    [merkledag.browser.views :as views]
     [reagent.core :as reagent]
+    [re-frame.core :refer [dispatch dispatch-sync]]
     [secretary.core :as secretary])
   (:import
     goog.History))
-
-
-(defonce app-state
-  (reagent/atom
-    {:server-url "http://localhost:8080"
-     :view [:home]
-     :blocks []}))
 
 
 (enable-console-print!)
@@ -42,53 +39,18 @@
   ; TODO: parse id as a multihash
   (dispatch [:show-view :node id]))
 
-(defn list-blocks-view
+
+(defn ^:export run
+  [container]
+  (dispatch-sync [:initialize-db])
+  (reagent/render-component
+    [views/browser-app]
+    container))
+
+
+(defn on-js-reload
   []
-  [:div
-   [:h1 "Blocks"]
-   [:input {:type "button" :value "Refresh"
-            :on-click (fn refresh-blocks []
-                        (ajax/GET (str (:server-url @app-state) "/blocks/")
-                          {:response-format (edn-response-format)
-                           :handler #(do (prn %) (swap! app-state assoc :blocks (:entries %)))
-                           :error-handler #(js/alert (str "Failed to query blocks: " (pr-str %)))}))}]
-   [block-list (:blocks @app-state)]])
-
-
-(defn show-node-view
-  [id]
-  ; TODO: fire off ajax request here?
-  [:div
-   [:h1 id]
-   [:a {:href "#/"} "Home"]])
-
-
-(defn current-page-view
-  []
-  (let [view (:view @app-state)]
-    (case (first view)
-      :home [list-blocks-view]
-      :node/show [show-node-view (second view)]
-      [:div
-       [:h1 "???"]
-       [:p "Unknown view: " [:code (pr-str view)]]])))
-
-
-
-(defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on
   ;; your application
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
 )
-
-
-(defn ^:export main
-  []
-  (define-app-routes!)
-  (hook-browser-navigation!)
-  (reagent/render-component
-    [current-page-view]
-    (. js/document (getElementById "app"))))
-
-
-(defonce setup (main))
