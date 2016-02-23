@@ -1,4 +1,4 @@
-(ns merkledag-browser.core
+(ns merkledag.browser.core
   (:require-macros
     [secretary.core :refer [defroute]])
   (:require
@@ -21,9 +21,12 @@
 
 (enable-console-print!)
 
+#_
+(secretary/set-config! :prefix "#")
 
-(defn hook-browser-navigation!
-  []
+
+(def history
+  "Hook into browser navigation events."
   (doto (History.)
     (events/listen
       EventType/NAVIGATE
@@ -32,24 +35,12 @@
     (.setEnabled true)))
 
 
-(defn define-app-routes!
-  []
-  (secretary/set-config! :prefix "#")
-  (defroute "/" []
-    (swap! app-state assoc :view [:home]))
-  (defroute "/node/:id" [id]
-    ; TODO: parse id as a multihash
-    (swap! app-state assoc :view [:node/show id])))
+(defroute "/" []
+  (dispatch [:show-view :home]))
 
-
-(defn block-list
-  [blocks]
-  [:ul
-   (for [block blocks]
-     ^{:key (:id block)}
-     [:li [:strong [:a {:href (str "#/node/" (:id block))} (str (:id block))]]
-      " " [:span "(" (:size block) " bytes)"]])])
-
+(defroute "/node/:id" [id]
+  ; TODO: parse id as a multihash
+  (dispatch [:show-view :node id]))
 
 (defn list-blocks-view
   []

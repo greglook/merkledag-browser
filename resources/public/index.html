@@ -2,14 +2,20 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="css/style.css" rel="stylesheet" type="text/css">
   </head>
   <body>
     <div id="app">
-      <h2>Figwheel template</h2>
-      <p>Checkout your developer console.</p>
+      <h2>MerkleDAG Browser</h2>
+      <p>Loading...</p>
     </div>
-    <script src="js/compiled/merkledag_browser.js" type="text/javascript"></script>
+    <script src="js/compiled/merkledag.browser.js" type="text/javascript"></script>
+    <script>
+      window.onload = function() {
+        var container = document.getElementById("app");
+        merkledag.browser.core.run(container);
+      }
+    </script>
   </body>
 </html>

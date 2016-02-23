@@ -19,31 +19,33 @@
    [reagent "0.5.1"]
    [secretary "1.2.3"]]
 
+  :hooks [leiningen.cljsbuild]
   :source-paths ["src"]
-
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
-  :cljsbuild {:builds
-              [{:id "dev"
-                :source-paths ["src"]
+  :cljsbuild
+  {:builds
+   [{:id "dev"
+     :source-paths ["src"]
 
-                ;; If no code is to be run, set :figwheel true for continued automagical reloading
-                :figwheel {:on-jsload "merkledag-browser.core/on-js-reload"}
+     ;; If no code is to be run, set :figwheel true for continued automagical reloading
+     :figwheel {:on-jsload "merkledag.browser.core/on-js-reload"}
 
-                :compiler {:main merkledag-browser.core
-                           :asset-path "js/compiled/out"
-                           :output-to "resources/public/js/compiled/merkledag_browser.js"
-                           :output-dir "resources/public/js/compiled/out"
-                           :source-map-timestamp true}}
-               ;; This next build is an compressed minified build for
-               ;; production. You can build this with:
-               ;; lein cljsbuild once min
-               {:id "min"
-                :source-paths ["src"]
-                :compiler {:output-to "resources/public/js/compiled/merkledag_browser.js"
-                           :main merkledag-browser.core
-                           :optimizations :advanced
-                           :pretty-print false}}]}
+     :compiler {:main merkledag.browser.core
+                :asset-path "js/compiled/out"
+                :output-to "resources/public/js/compiled/merkledag.browser.js"
+                :output-dir "resources/public/js/compiled/out"
+                :source-map true
+                :source-map-timestamp true}}
+    ;; This next build is an compressed minified build for
+    ;; production. You can build this with:
+    ;; lein cljsbuild once min
+    {:id "min"
+     :source-paths ["src"]
+     :compiler {:output-to "resources/public/js/compiled/merkledag.browser.js"
+                :main merkledag.browser.core
+                :optimizations :advanced
+                :pretty-print false}}]}
 
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
              ;; :server-port 3449 ;; default
