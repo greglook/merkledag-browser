@@ -7,8 +7,8 @@
 
 (def initial-value
   {:server-url "http://localhost:8080"
-   :node-stats (sorted-map)
-   :show [:home]})
+   :show [:home]
+   :blocks []})
 
 
 
