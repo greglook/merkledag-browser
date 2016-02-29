@@ -25,16 +25,20 @@
   (fn [db _]
     (println "Scanning new blocks")
     (ajax/GET (str (:server-url db) "/blocks/")
-      {:response-format (edn-response-format)
-       :handler #(dispatch [:update-blocks (:entries %)])
-       :error-handler #(println (str "Failed to query blocks: " (pr-str %)))})
+      {:response-format (edn-response-format)  ; TODO: parse #data/hash tags
+       :handler #(dispatch [:update-blocks true %])
+       :error-handler #(dispatch [:update-blocks false %])})
     (assoc db :updating-blocks? true)))
 
 
 (register-handler :update-blocks
   [trim-v]
-  (fn [db [entries]]
-    (println "Updating blocks")
-    (assoc db
-      :blocks entries
-      :updating-blocks? false)))
+  (fn [db [success? response]]
+    (if success?
+      (do (println "Successfully fetched blocks")
+          (assoc db
+            :blocks (:items response)
+            :updating-blocks? false))
+      (do (println "Error updating blocks:" response)
+          (assoc db
+            :updating-blocks? false)))))
