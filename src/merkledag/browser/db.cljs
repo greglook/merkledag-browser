@@ -7,7 +7,10 @@
 
 (def initial-value
   {:server-url "http://localhost:8080"
+   ; TODO: authentication credentials
    :show [:home]
+      #_ [:node Multihash [String]]
+   ; TODO: LRU cache of multihash -> node value
    :blocks []})
 
 

@@ -30,3 +30,6 @@ Backend server requirements:
 - `HEAD /nodes/:id`          Get the storage metadata, encoding, and links of a block without the content
 - `GET  /nodes/:id`          Get the links and content of a node
 - `GET  /nodes/:id/:path*`   Traverse link paths and return the final node.
+- `GET  /refs/`              List named reference pointers.
+- `GET  /refs/:name`         Resolve the given reference; returns the hash of the target node.
+- `PUT  /refs/:name`         Create or update a pointer.
