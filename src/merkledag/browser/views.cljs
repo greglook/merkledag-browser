@@ -2,6 +2,7 @@
   (:require
     [ajax.core :as ajax]
     [ajax.edn :refer [edn-response-format]]
+    [multihash.core :as multihash]
     [re-frame.core :refer [dispatch subscribe]]))
 
 
@@ -9,9 +10,10 @@
   [blocks]
   [:ul
    (for [block blocks]
-     ^{:key (:id block)}
-     [:li [:strong [:a {:href (str "#/node/" (:id block))} (str (:id block))]]
-      " " [:span "(" (:size block) " bytes)"]])])
+     (let [b58-id (multihash/base58 (:id block))]
+       ^{:key (:id block)}
+       [:li [:strong [:a {:href (str "#/node/" b58-id)} b58-id]]
+        " " [:span "(" (:size block) " bytes)"]]))])
 
 
 (defn list-blocks-view
@@ -28,7 +30,7 @@
 (defn show-node-view
   [id]
   [:div
-   [:h1 id]
+   [:h1 (multihash/base58 id)]
    [:a {:href "#/"} "Home"]])
 
 

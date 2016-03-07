@@ -9,6 +9,7 @@
     [merkledag.browser.handlers]
     [merkledag.browser.queries]
     [merkledag.browser.views :as views]
+    [multihash.core :as multihash]
     [reagent.core :as reagent]
     [re-frame.core :refer [dispatch dispatch-sync]]
     [secretary.core :as secretary])
@@ -36,8 +37,8 @@
   (dispatch [:show-view :home]))
 
 (defroute "/node/:id" [id]
-  ; TODO: parse id as a multihash
-  (dispatch [:show-view :node id]))
+  (let [id (multihash/decode id)]
+    (dispatch [:show-view :node id])))
 
 
 (defn ^:export run

@@ -2,8 +2,13 @@
   (:require
     [ajax.core :as ajax]
     [ajax.edn :refer [edn-response-format]]
+    [cljs.reader :as reader]
     [merkledag.browser.db :as db]
+    [multihash.core :as multihash]
     [re-frame.core :refer [after dispatch path register-handler trim-v]]))
+
+
+(reader/register-tag-parser! 'data/hash multihash/decode)
 
 
 ;; Initialize the database on application startup.
@@ -25,7 +30,7 @@
   (fn [db _]
     (println "Scanning new blocks")
     (ajax/GET (str (:server-url db) "/blocks/")
-      {:response-format (edn-response-format)  ; TODO: parse #data/hash tags
+      {:response-format (edn-response-format)
        :handler #(dispatch [:update-blocks true %])
        :error-handler #(dispatch [:update-blocks false %])})
     (assoc db :updating-blocks? true)))
