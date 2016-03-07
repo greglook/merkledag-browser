@@ -29,9 +29,32 @@
 
 (defn show-node-view
   [id]
-  [:div
-   [:h1 (multihash/base58 id)]
-   [:a {:href "#/"} "Home"]])
+  (let [blocks (subscribe [:blocks])]
+    (fn []
+      [:div
+       [:h1 (multihash/base58 id)]
+       (if-let [node (get @blocks id)]
+         [:div
+          [:p (str id)]
+          [:p [:strong "Size: "]  (:size node) " bytes"]
+          [:p [:strong "Encoding: "]  (interpose ", "  (map #(vector :code %) (:encoding node)))]
+          (when (:links node)
+            [:div
+             [:h2 "Links"]
+             [:ol (map (fn [link]
+                         [:li
+                          [:strong (multihash/base58 (:target link))]
+                          " "
+                          [:a {:href (str "#/node/" (multihash/base58 (:target link)))} (:name link)]
+                          (when (:tsize link)
+                            (str " (" (:tsize link) " bytes)"))])
+                       (:links node))]])
+          (when (:data node)
+            [:div
+             [:h2 "Data"]
+             [:code (pr-str (:data node))]])]
+         [:p "Not Found"])
+       [:a {:href "#/"} "Home"]])))
 
 
 (defn browser-app
