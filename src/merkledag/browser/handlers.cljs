@@ -42,7 +42,7 @@
     (if success?
       (do (println "Successfully fetched blocks")
           (assoc db
-            :blocks (:items response)
+            :blocks (into (:blocks db) (map #(vector (:id %) %) (:items response)))
             :updating-blocks? false))
       (do (println "Error updating blocks:" response)
           (assoc db

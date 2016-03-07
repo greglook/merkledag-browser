@@ -11,7 +11,7 @@
    :show [:home]
       #_ [:node Multihash [String]]
    ; TODO: LRU cache of multihash -> node value
-   :blocks []})
+   :blocks {}})
 
 
 

@@ -9,9 +9,9 @@
 (defn block-list
   [blocks]
   [:ul
-   (for [block blocks]
-     (let [b58-id (multihash/base58 (:id block))]
-       ^{:key (:id block)}
+   (for [[id block] blocks]
+     (let [b58-id (multihash/base58 id)]
+       ^{:key (str id)}
        [:li [:strong [:a {:href (str "#/node/" b58-id)} b58-id]]
         " " [:span "(" (:size block) " bytes)"]]))])
 
