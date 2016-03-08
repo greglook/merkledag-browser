@@ -8,6 +8,7 @@
     [goog.history.EventType :as EventType]
     [merkledag.browser.handlers]
     [merkledag.browser.queries]
+    [merkledag.browser.routes]
     [merkledag.browser.views :as views]
     [multihash.core :as multihash]
     [reagent.core :as reagent]
@@ -18,27 +19,6 @@
 
 
 (enable-console-print!)
-
-#_
-(secretary/set-config! :prefix "#")
-
-
-(def history
-  "Hook into browser navigation events."
-  (doto (History.)
-    (events/listen
-      EventType/NAVIGATE
-      (fn [event]
-        (secretary/dispatch! (.-token event))))
-    (.setEnabled true)))
-
-
-(defroute "/" []
-  (dispatch [:show-view :home]))
-
-(defroute "/node/:id" [id]
-  (let [id (multihash/decode id)]
-    (dispatch [:show-view :node id])))
 
 
 (defn ^:export run
