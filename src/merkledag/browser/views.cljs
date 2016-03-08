@@ -51,7 +51,7 @@
                       ".")
         ascii-section #(str/join (map byte->char %))]
     (->> (bytes/byte-seq data)
-         (partition 16)
+         (partition-all 16)
          (map (fn hexedit-line
                 [line-data]
                 (let [left (take 8 line-data)
