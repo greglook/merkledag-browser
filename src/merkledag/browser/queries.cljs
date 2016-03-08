@@ -13,3 +13,8 @@
 (register-sub :blocks
   (fn [db _]
     (reaction (:blocks @db))))
+
+
+(register-sub :block-content
+  (fn [db [_ id]]
+    (reaction (get (:block-content @db) id))))
