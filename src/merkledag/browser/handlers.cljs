@@ -19,6 +19,13 @@
     db/initial-value))
 
 
+(register-handler :set-server-url
+  [(path :server-url) trim-v]
+  (fn [old-url [new-url]]
+    (println "Changing server-url to:" new-url)
+    new-url))
+
+
 ;; Set which view is showing in the interface.
 (register-handler :show-view
   [(path :show) trim-v]

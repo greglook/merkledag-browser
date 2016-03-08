@@ -6,6 +6,7 @@
     [alphabase.hex :as hex]
     [clojure.string :as str]
     [multihash.core :as multihash]
+    [reagent.core :as r]
     [re-frame.core :refer [dispatch subscribe]]))
 
 
@@ -71,35 +72,64 @@
         content (subscribe [:block-content id])]
     (fn []
       [:div
-       [:h1 (multihash/base58 id)]
+       [:h1.page-header (multihash/base58 id)]
        (if-let [node (get @blocks id)]
-         [:div
+         [:div.row
           [:p (str id)]
           [:p [:strong "Size: "]  (:size node) " bytes"]
           [:p [:strong "Encoding: "]  (interpose ", "  (map #(vector :code %) (:encoding node)))]
-          [:div.content
-            [:h2 "Block Content"]
-            (if-let [data @content]
-              [:pre (hexedit-block data)]
-              [:input {:type "button" :value "Load binary content"
-                       :on-click #(dispatch [:load-block-content id])}])]
-          (when (:links node)
-            [:div
-             [:h2 "Links"]
-             [:ol (map (fn [link]
-                         [:li
-                          [:strong (multihash/base58 (:target link))]
-                          " "
-                          [:a {:href (str "#/node/" (multihash/base58 (:target link)))} (:name link)]
-                          (when (:tsize link)
-                            (str " (" (:tsize link) " bytes)"))])
-                       (:links node))]])
-          (when (:data node)
-            [:div
-             [:h2 "Data"]
-             [:code (pr-str (:data node))]])]
+          [:h2.sub-header "Block Content"]
+          (if-let [data @content]
+            [:pre (hexedit-block data)]
+            [:input {:type "button" :value "Load binary content"
+                     :on-click #(dispatch [:load-block-content id])}])]
          [:p "Not Found"])
        [:a {:href "#/"} "Home"]])))
+
+
+(defn server-url-input
+  [props]
+  (let [connection-info (subscribe [:connection-info])
+        text (r/atom (:server-url @connection-info))
+        reset #(reset! text (:server-url @connection-info))
+        save #(let [url (-> @text str str/trim)]
+                (when-not (empty? url)
+                  (dispatch [:set-server-url url]))
+                (reset! text url))]
+    (fn []
+      [:input.form-control
+       (merge props
+              {:type "text"
+               :value @text
+               :on-blur save
+               :on-change #(reset! text (-> % .-target .-value))
+               :on-key-down #(case (.-which %)
+                               13 (.blur (.-target %))
+                               27 (reset)
+                               nil)})])))
+
+
+(defn nav-bar
+  "Top navigation menu and connection settings."
+  []
+  (let [connection-info (subscribe [:connection-info])]
+    (fn nav-component []
+      [:nav.navbar.navbar-inverse.navbar-fixed-top
+       [:div.container-fluid
+        [:div.navbar-header
+         ; button?
+         [:a.navbar-brand {:href "#/"} "Merkledag Browser"]]
+        [:div#navbar.navbar-collapse.collapse
+         [:ul.nav.navbar-nav.navbar-right
+          [:li [:a {:href "#/"} "Blocks"]]
+          [:li [:a {:href "#/settings"} "Settings"]]]
+         [:form.navbar-form.navbar-right
+          [server-url-input {:placeholder "API server"}]
+          #_
+          [:input.form-control
+           {:type :text
+            :placeholder "API server"
+            :defaultValue (:server-url @connection-info)}]]]]])))
 
 
 (defn browser-app
@@ -107,7 +137,20 @@
   (let [show-view (subscribe [:showing])]
     (fn app-component []
       (let [[view & more] @show-view]
-        (case view
-          :home [list-blocks-view]
-          :node [show-node-view (first more)]
-          [:h1 "Unknown View"])))))
+        [:div
+         [nav-bar]
+         [:div.container-fluid
+          [:div.row
+           [:div.col-sm-3.col-md-2.sidebar
+            [:ul.nav.nav-sidebar
+             [:li.active [:a {:href "#/"} "Overview"]]
+             [:li [:a {:href "#/"} "Blocks"]]
+             [:li [:a "..."]]]
+            [:ul.nav.nav-sidebar
+             [:li [:a "More list"]]
+             [:li [:a "..."]]]]
+           [:div.col-sm-9.col-sm-offset-3.col-md-10.col-md-offset-2.main
+             (case view
+               :home [list-blocks-view]
+               :node [show-node-view (first more)]
+               [:h1.page-header "Unknown View"])]]]]))))

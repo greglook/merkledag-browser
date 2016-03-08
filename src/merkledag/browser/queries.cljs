@@ -10,6 +10,11 @@
     (reaction (:show @db))))
 
 
+(register-sub :connection-info
+  (fn [db _]
+    (reaction {:server-url (:server-url @db)})))
+
+
 (register-sub :blocks
   (fn [db _]
     (reaction (:blocks @db))))
