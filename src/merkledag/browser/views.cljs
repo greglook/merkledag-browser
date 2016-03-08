@@ -32,11 +32,16 @@
 
 (defn hexedit-block
   "Returns a string reminiscent of hex-editor views, with 16 bytes shown per
-  line in both hexadecimal and ascii (where printable)."
+  line in both hexadecimal and ascii (where printable).
+
+  Lines will be formatted like this:
+
+  ```
+  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f   ........ ........
+  00 01 02 03                                        ....
+  ```
+  "
   [data]
-  ; each line is formatted like:
-  ; 00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f   ........ ........
-  ; 00 01 02 03                                        ....
   (let [hex-section #(str (str/join " " (map hex/byte->hex %))
                           (when (< (count %) 8)
                             (str/join (repeat (- 8 (count %)) "   "))))
