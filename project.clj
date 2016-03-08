@@ -25,6 +25,11 @@
   :source-paths ["src"]
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
+  :hiera
+  {:cluster-depth 2
+   :vertical false
+   :show-external false}
+
   :cljsbuild
   {:builds
    [{:id "dev"
