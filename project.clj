@@ -17,6 +17,7 @@
    [org.clojure/clojurescript "1.7.228"]
    [org.clojure/core.async "0.2.374"
     :exclusions [org.clojure/tools.reader]]
+   [prismatic/schema "1.0.5"]
    [reagent "0.5.1"]
    [re-frame "0.7.0-alpha-2"]
    [secretary "1.2.3"]]
@@ -35,7 +36,6 @@
    [{:id "dev"
      :source-paths ["src"]
 
-     ;; If no code is to be run, set :figwheel true for continued automagical reloading
      :figwheel {:on-jsload "merkledag.browser.core/on-js-reload"}
 
      :compiler {:main merkledag.browser.core
@@ -44,6 +44,7 @@
                 :output-dir "resources/public/js/compiled/out"
                 :source-map true
                 :source-map-timestamp true}}
+
     ;; This next build is an compressed minified build for
     ;; production. You can build this with:
     ;; lein cljsbuild once min
