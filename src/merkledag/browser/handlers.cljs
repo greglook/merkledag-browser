@@ -10,6 +10,23 @@
 
 
 (reader/register-tag-parser! 'data/hash multihash/decode)
+(reader/register-tag-parser! 'data/link (partial apply db/->MerkleLink))
+
+
+(defn str->bytes
+  "Converts a string response into raw bytes."
+  [string]
+  (bytes/init-bytes
+    (reduce (fn add-char-bytes
+              [acc chr]
+              (loop [code (.charCodeAt chr 0)
+                     acc acc]
+                (if (zero? code)
+                  acc
+                  (recur (bit-and 0xFF (bit-shift-right code 8))
+                         (conj acc code)))))
+            [] string)))
+
 
 
 ;; Initialize the database on application startup.
@@ -17,6 +34,12 @@
   (fn [_ _]
     ;(dispatch [:scan-blocks])
     db/initial-value))
+
+
+(register-handler :touch-ui
+  (fn [db _]
+    (println "Updating current ui-counter:" (:ui-counter db))
+    (update db :ui-counter (fnil inc 0))))
 
 
 (register-handler :set-server-url
@@ -28,9 +51,12 @@
 
 ;; Set which view is showing in the interface.
 (register-handler :show-view
-  [(path :show) trim-v]
-  (fn [_ new-view]
-    new-view))
+  [trim-v]
+  (fn [db new-view]
+    (case (first new-view)
+      :node (dispatch [:load-node (second new-view)])
+      nil)
+    (assoc db :show new-view)))
 
 
 (register-handler :scan-blocks
@@ -49,9 +75,8 @@
   (fn [db [success? response]]
     (if success?
       (do (println "Successfully fetched blocks")
-          (assoc db
-            :blocks (into (:blocks db) (map #(vector (:id %) %) (:items response)))
-            :updating-blocks? false))
+          (-> (reduce #(db/update-node %1 (:id %2) %2) db (:items response))
+              (assoc :updating-blocks? false)))
       (do (println "Error updating blocks:" response)
           (assoc db
             :updating-blocks? false)))))
@@ -62,34 +87,30 @@
   (fn [db [id]]
     (println "Loading block" (str id))
     (ajax/GET (str (:server-url db) "/blocks/" (multihash/base58 id))
-      {:handler #(dispatch [:update-block-content id true %])
-       :error-handler #(dispatch [:update-block-content id false %])})
+      {:handler #(dispatch [:update-node id true {:content (str->bytes %)}])
+       :error-handler #(dispatch [:update-node id false %])})
     (assoc db :updating-blocks? true)))
 
 
-(defn str->bytes
-  "Converts a string response into raw bytes."
-  [string]
-  (bytes/init-bytes
-    (reduce (fn add-char-bytes
-              [acc chr]
-              (loop [code (.charCodeAt chr 0)
-                     acc acc]
-                (if (zero? code)
-                  acc
-                  (recur (bit-and 0xFF (bit-shift-right code 8))
-                         (conj acc code)))))
-            [] string)))
-
-
-(register-handler :update-block-content
+(register-handler :load-node
   [trim-v]
-  (fn [db [id success? response]]
+  (fn [db [id]]
+    (println "Loading node" (str id))
+    (ajax/GET (str (:server-url db) "/nodes/" (multihash/base58 id)
+                   "?t=" (js/Date.)) ; FIXME: ugh, this is gross
+      {:response-format (edn-response-format)
+       :handler #(dispatch [:update-node id true %])
+       :error-handler #(dispatch [:update-node id false %])})
+    (assoc db :updating-blocks? true)))
+
+
+(register-handler :update-node
+  [trim-v]
+  (fn [db [id success? data]]
     (if success?
-      (do (println "Successfully fetched block" (str id))
-          (assoc db
-            :block-content (assoc (:block-content db) id (str->bytes response))
-            :updating-blocks? false))
-      (do (println "Failed to fetch block" (str id) ":" response)
-          (assoc db
-            :updating-blocks? false)))))
+      (do (println "Updating node" (str id) "with" data)
+          (-> db
+              (db/update-node id data)
+              (assoc :updating-blocks? false)))
+      (do (println "Failed to fetch block" (str id) ":" data)
+          (assoc db :updating-blocks? false)))))

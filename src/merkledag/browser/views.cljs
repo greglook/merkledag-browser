@@ -4,10 +4,14 @@
     [ajax.edn :refer [edn-response-format]]
     [alphabase.bytes :as bytes]
     [alphabase.hex :as hex]
+    [cljs.pprint :refer [pprint]]
     [clojure.string :as str]
+    [merkledag.browser.routes :refer [home-path node-path]]
     [multihash.core :as multihash]
     [reagent.core :as r]
-    [re-frame.core :refer [dispatch subscribe]]))
+    [re-frame.core :refer [dispatch subscribe]])
+  (:import
+    [goog.string StringBuffer]))
 
 
 (defn block-list
@@ -16,13 +20,13 @@
    (for [[id block] blocks]
      (let [b58-id (multihash/base58 id)]
        ^{:key (str id)}
-       [:li [:strong [:a {:href (str "#/node/" b58-id)} b58-id]]
+       [:li [:strong [:a {:href (node-path {:id b58-id})} b58-id]]
         " " [:span "(" (:size block) " bytes)"]]))])
 
 
 (defn list-blocks-view
   []
-  (let [blocks (subscribe [:blocks])]
+  (let [blocks (subscribe [:nodes])]
     (fn []
       [:div
        [:h1 "Blocks"]
@@ -68,30 +72,47 @@
 
 (defn show-node-view
   [id]
-  (let [blocks (subscribe [:blocks])
-        content (subscribe [:block-content id])]
+  (let [node-info (subscribe [:node-info id])]
     (fn []
       [:div
        [:h1.page-header (multihash/base58 id)]
-       (if-let [node (get @blocks id)]
+       (if-let [node @node-info]
          [:div.row
+          [:input {:type "button", :value "Reload", :on-click #(dispatch [:load-node id])}]
           [:p (str id)]
           [:p [:strong "Size: "]  (:size node) " bytes"]
-          [:p [:strong "Encoding: "]  (interpose ", "  (map #(vector :code %) (:encoding node)))]
+          (when (:encoding node)
+            [:p [:strong "Encoding: "]  (interpose " "  (map #(vector :code %) (:encoding node)))])
+          (when (:links node)
+            [:div
+             [:h3 "Links"]
+             [:ul
+              (for [link (:links node)
+                    :let [b58-target (multihash/base58 (:target link))]]
+                ^{:key (str (:name link) "|" (:target link))}
+                [:li [:strong [:a {:href (node-path {:id b58-target})} b58-target]]
+                 " " (:name link) " " [:span "(" (:tsize link) " total bytes)"]])]])
+          (when (:data node)
+            [:div
+             [:h3 "Data"]
+             [:pre (let [sb (StringBuffer.)
+                         out (StringBufferWriter. sb)]
+                     (pprint (:data node) out)
+                     (str sb))]])
           [:h2.sub-header "Block Content"]
-          (if-let [data @content]
-            [:pre (hexedit-block data)]
+          (if (:content node)
+            [:pre (hexedit-block (:content node))]
             [:input {:type "button" :value "Load binary content"
                      :on-click #(dispatch [:load-block-content id])}])]
          [:p "Not Found"])
-       [:a {:href "#/"} "Home"]])))
+       [:a {:href (home-path)} "Home"]])))
 
 
 (defn server-url-input
   [props]
-  (let [connection-info (subscribe [:connection-info])
-        text (r/atom (:server-url @connection-info))
-        reset #(reset! text (:server-url @connection-info))
+  (let [app-config (subscribe [:app-config])
+        text (r/atom (:server-url @app-config))
+        reset #(reset! text (:server-url @app-config))
         save #(let [url (-> @text str str/trim)]
                 (when-not (empty? url)
                   (dispatch [:set-server-url url]))
@@ -112,24 +133,19 @@
 (defn nav-bar
   "Top navigation menu and connection settings."
   []
-  (let [connection-info (subscribe [:connection-info])]
+  (let [app-config (subscribe [:app-config])]
     (fn nav-component []
       [:nav.navbar.navbar-inverse.navbar-fixed-top
        [:div.container-fluid
         [:div.navbar-header
-         ; button?
-         [:a.navbar-brand {:href "#/"} "Merkledag Browser"]]
+         [:a.navbar-brand {:href (home-path)} "Merkledag Browser"]
+         [:span (:ui-counter @app-config)]]
         [:div#navbar.navbar-collapse.collapse
          [:ul.nav.navbar-nav.navbar-right
-          [:li [:a {:href "#/"} "Blocks"]]
+          [:li [:a {:href (home-path)} "Blocks"]]
           [:li [:a {:href "#/settings"} "Settings"]]]
          [:form.navbar-form.navbar-right
-          [server-url-input {:placeholder "API server"}]
-          #_
-          [:input.form-control
-           {:type :text
-            :placeholder "API server"
-            :defaultValue (:server-url @connection-info)}]]]]])))
+          [server-url-input {:placeholder "API server"}]]]]])))
 
 
 (defn browser-app
@@ -143,7 +159,7 @@
           [:div.row
            [:div.col-sm-3.col-md-2.sidebar
             [:ul.nav.nav-sidebar
-             [:li.active [:a {:href "#/"} "Overview"]]
+             [:li.active [:a {:href (home-path)} "Overview"]]
              [:li [:a {:href "#/"} "Blocks"]]
              [:li [:a "..."]]]
             [:ul.nav.nav-sidebar

@@ -11,7 +11,6 @@
     goog.History))
 
 
-#_
 (secretary/set-config! :prefix "#")
 
 

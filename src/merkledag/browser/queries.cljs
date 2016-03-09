@@ -10,16 +10,17 @@
     (reaction (:show @db))))
 
 
-(register-sub :connection-info
+(register-sub :app-config
   (fn [db _]
-    (reaction {:server-url (:server-url @db)})))
+    (reaction {:server-url (:server-url @db)
+               :ui-counter (:ui-counter @db 0)})))
 
 
-(register-sub :blocks
+(register-sub :nodes
   (fn [db _]
-    (reaction (:blocks @db))))
+    (reaction (:nodes @db))))
 
 
-(register-sub :block-content
+(register-sub :node-info
   (fn [db [_ id]]
-    (reaction (get (:block-content @db) id))))
+    (reaction (get (:nodes @db) id))))
