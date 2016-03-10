@@ -96,14 +96,17 @@
 
 (register-handler :load-node
   [trim-v]
-  (fn [db [id]]
-    (println "Loading node" (str id))
-    (ajax/GET (str (:server-url db) "/nodes/" (multihash/base58 id)
-                   "?t=" (js/Date.)) ; FIXME: ugh, this is gross
-      {:response-format (edn-response-format)
-       :handler #(dispatch [:update-node id true %])
-       :error-handler #(dispatch [:update-node id false %])})
-    (assoc db :updating-blocks? true)))
+  (fn [db [id force?]]
+    (if (or force? (nil? (get-in db [:nodes id ::loaded])))
+      (do (println "Loading node" (str id))
+          (ajax/GET (str (:server-url db) "/nodes/" (multihash/base58 id)
+                         "?t=" (js/Date.)) ; FIXME: ugh, this is gross
+            {:response-format (edn-response-format)
+             :handler #(dispatch [:update-node id true (assoc % ::loaded (js/Date.))])
+             :error-handler #(dispatch [:update-node id false %])})
+          (assoc db :updating-blocks? true))
+      (do (println "Using cached node" (str id))
+          db))))
 
 
 (register-handler :update-node
