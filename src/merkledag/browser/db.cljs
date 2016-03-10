@@ -9,8 +9,7 @@
 (def initial-value
   {:server-url "http://localhost:8080"
    ; TODO: authentication credentials
-   :show [:home]
-      #_ [:node Multihash [String]]
+   :show :home
    ; TODO: make this an LRU cache of multihash -> node value
    :nodes {}})
 
@@ -42,7 +41,8 @@
 
 (defschema DB
   {:server-url s/Str
-   :show [s/Keyword s/Any]
+   :show (s/enum :home :node)
+   :view-state {s/Keyword {s/Keyword s/Any}}
    :nodes {Multihash NodeInfo}})
 
 

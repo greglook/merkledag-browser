@@ -52,11 +52,13 @@
 ;; Set which view is showing in the interface.
 (register-handler :show-view
   [trim-v]
-  (fn [db new-view]
-    (case (first new-view)
-      :node (dispatch [:load-node (second new-view)])
+  (fn [db [view state]]
+    (case view
+      :node (dispatch [:load-node (:id state)])
       nil)
-    (assoc db :show new-view)))
+    (-> db
+        (assoc :show view)
+        (update-in [:view-state view] merge state))))
 
 
 (register-handler :scan-blocks

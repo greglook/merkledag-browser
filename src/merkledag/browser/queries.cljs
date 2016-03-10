@@ -16,6 +16,11 @@
                :ui-counter (:ui-counter @db 0)})))
 
 
+(register-sub :view-state
+  (fn [db [_ view]]
+    (reaction (get-in @db [:view-state view]))))
+
+
 (register-sub :nodes
   (fn [db _]
     (reaction (:nodes @db))))
