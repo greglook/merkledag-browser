@@ -32,7 +32,7 @@
 (defroute node-path "/node/:id" [id]
   ; TODO: handle errors here
   (let [id (multihash/decode id)]
-    (dispatch [:show-view :node id])))
+    (dispatch [:show-view :node {:id id}])))
 
 
 ; TODO: handle unmatched routes (404)

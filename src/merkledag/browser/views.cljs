@@ -72,40 +72,42 @@
 
 (defn show-node-view
   [id]
-  (let [node-info (subscribe [:node-info id])]
+  (let [state (subscribe [:view-state :node])
+        node-info (subscribe [:node-info [:node :id]])]
     (fn []
-      [:div
-       [:h1.page-header (multihash/base58 id)]
-       (if-let [node @node-info]
-         [:div.row
-          [:input {:type "button", :value "Reload", :on-click #(dispatch [:load-node id])}]
-          [:p (str id)]
-          [:p [:strong "Size: "]  (:size node) " bytes"]
-          (when (:encoding node)
-            [:p [:strong "Encoding: "]  (interpose " "  (map #(vector :code %) (:encoding node)))])
-          (when (:links node)
-            [:div
-             [:h3 "Links"]
-             [:ul
-              (for [link (:links node)
-                    :let [b58-target (multihash/base58 (:target link))]]
-                ^{:key (str (:name link) "|" (:target link))}
-                [:li [:strong [:a {:href (node-path {:id b58-target})} b58-target]]
-                 " " (:name link) " " [:span "(" (:tsize link) " total bytes)"]])]])
-          (when (:data node)
-            [:div
-             [:h3 "Data"]
-             [:pre (let [sb (StringBuffer.)
-                         out (StringBufferWriter. sb)]
-                     (pprint (:data node) out)
-                     (str sb))]])
-          [:h2.sub-header "Block Content"]
-          (if (:content node)
-            [:pre (hexedit-block (:content node))]
-            [:input {:type "button" :value "Load binary content"
-                     :on-click #(dispatch [:load-block-content id])}])]
-         [:p "Not Found"])
-       [:a {:href (home-path)} "Home"]])))
+      (let [{:keys [id]} @state]
+        [:div
+         [:h1.page-header (multihash/base58 id)]
+         (if-let [node @node-info]
+           [:div.row
+            [:input {:type "button", :value "Reload", :on-click #(dispatch [:load-node id true])}]
+            [:p (str id)]
+            [:p [:strong "Size: "]  (:size node) " bytes"]
+            (when (:encoding node)
+              [:p [:strong "Encoding: "]  (interpose " " (map #(vary-meta (vector :code %) assoc :key %) (:encoding node)))])
+            (when (:links node)
+              [:div
+               [:h3 "Links"]
+               [:ul
+                (for [link (:links node)
+                      :let [b58-target (multihash/base58 (:target link))]]
+                  ^{:key (str (:name link) "|" (:target link))}
+                  [:li [:strong [:a {:href (node-path {:id b58-target})} b58-target]]
+                   " " (:name link) " " [:span "(" (:tsize link) " total bytes)"]])]])
+            (when (:data node)
+              [:div
+               [:h3 "Data"]
+               [:pre (let [sb (StringBuffer.)
+                           out (StringBufferWriter. sb)]
+                       (pprint (:data node) out)
+                       (str sb))]])
+            [:h2.sub-header "Block Content"]
+            (if (:content node)
+              [:pre (hexedit-block (:content node))]
+              [:input {:type "button" :value "Load binary content"
+                       :on-click #(dispatch [:load-block-content id])}])]
+           [:p "Not Found"])
+         [:a {:href (home-path)} "Home"]]))))
 
 
 (defn server-url-input
@@ -152,21 +154,20 @@
   []
   (let [show-view (subscribe [:showing])]
     (fn app-component []
-      (let [[view & more] @show-view]
-        [:div
-         [nav-bar]
-         [:div.container-fluid
-          [:div.row
-           [:div.col-sm-3.col-md-2.sidebar
-            [:ul.nav.nav-sidebar
-             [:li.active [:a {:href (home-path)} "Overview"]]
-             [:li [:a {:href "#/"} "Blocks"]]
-             [:li [:a "..."]]]
-            [:ul.nav.nav-sidebar
-             [:li [:a "More list"]]
-             [:li [:a "..."]]]]
-           [:div.col-sm-9.col-sm-offset-3.col-md-10.col-md-offset-2.main
-             (case view
-               :home [list-blocks-view]
-               :node [show-node-view (first more)]
-               [:h1.page-header "Unknown View"])]]]]))))
+      [:div
+       [nav-bar]
+       [:div.container-fluid
+        [:div.row
+         [:div.col-sm-3.col-md-2.sidebar
+          [:ul.nav.nav-sidebar
+           [:li.active [:a {:href (home-path)} "Overview"]]
+           [:li [:a {:href "#/"} "Blocks"]]
+           [:li [:a "..."]]]
+          [:ul.nav.nav-sidebar
+           [:li [:a "More list"]]
+           [:li [:a "..."]]]]
+         [:div.col-sm-9.col-sm-offset-3.col-md-10.col-md-offset-2.main
+           (case @show-view
+             :home [list-blocks-view]
+             :node [show-node-view]
+             [:h1.page-header "Unknown View"])]]]])))

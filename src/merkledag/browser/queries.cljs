@@ -27,5 +27,6 @@
 
 
 (register-sub :node-info
-  (fn [db [_ id]]
-    (reaction (get (:nodes @db) id))))
+  (fn [db [_ path]]
+    (reaction (let [id (get-in @db (cons :view-state path))]
+                (get-in @db [:nodes id])))))
