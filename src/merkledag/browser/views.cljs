@@ -9,6 +9,7 @@
     [merkledag.browser.routes :refer [home-path node-path]]
     [multihash.core :as multihash]
     [reagent.core :as r]
+    [reagent.ratom :refer-macros [reaction]]
     [re-frame.core :refer [dispatch subscribe]])
   (:import
     [goog.string StringBuffer]))
@@ -73,7 +74,8 @@
 (defn show-node-view
   [id]
   (let [state (subscribe [:view-state :node])
-        node-info (subscribe [:node-info [:node :id]])]
+        node-id (reaction (:id @state))
+        node-info (subscribe [:node-info] [node-id])]
     (fn []
       (let [{:keys [id]} @state]
         [:div
