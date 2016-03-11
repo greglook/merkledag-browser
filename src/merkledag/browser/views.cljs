@@ -146,19 +146,16 @@
 (defn nav-bar
   "Top navigation menu and connection settings."
   []
-  (let [app-config (subscribe [:app-config])]
-    (fn nav-component []
-      [:nav.navbar.navbar-inverse.navbar-fixed-top
-       [:div.container-fluid
-        [:div.navbar-header
-         [:a.navbar-brand {:href (home-path)} "Merkledag Browser"]
-         [:span (:ui-counter @app-config)]]
-        [:div#navbar.navbar-collapse.collapse
-         [:ul.nav.navbar-nav.navbar-right
-          [:li [:a {:href (home-path)} "Blocks"]]
-          [:li [:a {:href "#/settings"} "Settings"]]]
-         [:form.navbar-form.navbar-right
-          [server-url-input {:placeholder "API server"}]]]]])))
+  [:nav.navbar.navbar-inverse.navbar-fixed-top
+   [:div.container-fluid
+    [:div.navbar-header
+     [:a.navbar-brand {:href (home-path)} "Merkledag Browser"]]
+    [:div#navbar.navbar-collapse.collapse
+     [:ul.nav.navbar-nav.navbar-right
+      [:li [:a {:href (home-path)} "Blocks"]]
+      [:li [:a {:href "#/settings"} "Settings"]]]
+     [:form.navbar-form.navbar-right
+      [server-url-input {:placeholder "API server"}]]]]])
 
 
 (defn browser-app
