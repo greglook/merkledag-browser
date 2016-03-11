@@ -31,5 +31,4 @@
 
 (defn on-js-reload
   []
-  (println "JS reloaded!")
   (dispatch [:touch-ui]))

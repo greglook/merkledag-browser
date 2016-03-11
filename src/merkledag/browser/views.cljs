@@ -152,8 +152,10 @@
 
 (defn browser-app
   []
-  (let [show-view (subscribe [:showing])]
+  (let [show-view (subscribe [:showing])
+        app-config (subscribe [:app-config])]
     (fn app-component []
+      ^{:key (str "ui:" (:ui-counter @app-config 0))}
       [:div
        [nav-bar]
        [:div.container-fluid
