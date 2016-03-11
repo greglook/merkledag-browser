@@ -105,3 +105,8 @@ body {
   display: inline-block;
   border-radius: 50%;
 }
+
+
+th.ralign, td.ralign {
+  text-align: right;
+}

@@ -17,12 +17,21 @@
 
 (defn block-list
   [blocks]
-  [:ul
-   (for [[id block] blocks]
-     (let [b58-id (multihash/base58 id)]
-       ^{:key (str id)}
-       [:li [:strong [:a {:href (node-path {:id b58-id})} b58-id]]
-        " " [:span "(" (:size block) " bytes)"]]))])
+  [:div.table-responsive
+   [:table.table.table-striped.block-list
+    [:thead
+     [:tr
+      [:th "ID"]
+      [:th.ralign "Size"]
+      [:th.ralign "Stored At"]]]
+    [:tbody
+     (for [[id block] blocks]
+       (let [b58-id (multihash/base58 id)]
+         ^{:key (str id)}
+         [:tr
+          [:td [:strong [:a {:href (node-path {:id b58-id})} b58-id]]]
+          [:td.ralign (:size block)]
+          [:td.ralign (str (:stored-at block))]]))]]])
 
 
 (defn list-blocks-view
@@ -30,10 +39,10 @@
   (let [blocks (subscribe [:nodes])]
     (fn []
       [:div
-       [:h1 "Blocks"]
+       [:h1.page-header "Blocks"]
+       [block-list @blocks]
        [:input {:type "button" :value "Refresh"
-                :on-click #(dispatch [:scan-blocks])}]
-       [block-list @blocks]])))
+                :on-click #(dispatch [:scan-blocks])}]])))
 
 
 (defn hexedit-block
