@@ -138,8 +138,8 @@
                :on-blur save
                :on-change #(reset! text (-> % .-target .-value))
                :on-key-down #(case (.-which %)
-                               13 (.blur (.-target %))
-                               27 (reset)
+                               13 (do (save)  (.blur (.-target %)))
+                               27 (do (reset) (.blur (.-target %)))
                                nil)})])))
 
 
