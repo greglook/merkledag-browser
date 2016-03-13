@@ -40,10 +40,18 @@
    (s/optional-key :data) s/Any})
 
 
-(defschema DB
+(defschema ViewKeyword
+  (s/enum :home
+          :blocks-list
+          :node-detail
+          :refs-list
+          :ref-detail))
+
+
+(defschema DatabaseSchema
   {:server-url s/Str
-   :show (s/enum :home :node)
-   :view-state {s/Keyword {s/Keyword s/Any}}
+   :view/show ViewKeyword
+   :view/state {ViewKeyword {s/Keyword s/Any}}
    :nodes {Multihash NodeInfo}})
 
 
