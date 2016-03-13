@@ -47,11 +47,11 @@
 
 (defn node-detail-view
   []
-  (let [state (subscribe [:view-state :node-detail])
-        node-id (reaction (:id @state))
+  (let [view (subscribe [:view-state])
+        node-id (reaction (get-in @view [:state :id]))
         node-info (subscribe [:node-info] [node-id])]
     (fn []
-      (let [{:keys [id]} @state]
+      (let [id @node-id]
         [:div
          [:h1.page-header (multihash/base58 id)]
          (if-let [node @node-info]
@@ -79,7 +79,7 @@
               (hexedit-block (:content node))
               [:input {:type "button" :value "Load binary content"
                        :on-click #(dispatch [:load-block-content id])}])]
-           [:p "Not Found"])
+           [:p "Node not found in store"])
          [:a {:href (home-path)} "Home"]]))))
 
 
@@ -151,10 +151,10 @@
 (defn side-bar
   "Side navigation menu."
   []
-  (let [showing (subscribe [:showing])]
+  (let [view (subscribe [:view-state])]
     (fn []
       (let [side-link (fn [views href text]
-                        [(if (contains? views @showing)
+                        [(if (contains? views (:view @view))
                            :li.active
                            :li)
                          [:a {:href href} text]])]
@@ -171,7 +171,7 @@
 
 (defn browser-app
   []
-  (let [show-view (subscribe [:showing])
+  (let [view (subscribe [:view-state])
         app-config (subscribe [:app-config])]
     (fn app-component []
       ^{:key (str "ui:" (:ui-counter @app-config 0))}
@@ -179,9 +179,9 @@
        [nav-bar]
        [:div.container-fluid
         [:div.row
-         [side-bar show-view]
+         [side-bar]
          [:div.col-sm-9.col-sm-offset-3.col-md-10.col-md-offset-2.main
-           (case @show-view
+           (case (:view @view)
              (:home :blocks-list) [blocks-list-view]
              :node-detail [node-detail-view]
              :refs-list [refs-list-view]

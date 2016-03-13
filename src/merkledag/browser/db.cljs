@@ -9,7 +9,8 @@
 (def initial-value
   {:server-url "http://localhost:8080"
    ; TODO: authentication credentials
-   :show :home
+   :view/show :home
+   :view/state {}
    ; TODO: make this an LRU cache of multihash -> node value
    :nodes {}})
 

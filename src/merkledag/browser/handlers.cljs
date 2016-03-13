@@ -54,11 +54,11 @@
   [trim-v]
   (fn [db [view state]]
     (case view
-      :node (dispatch [:load-node (:id state)])
+      :node-detail (dispatch [:load-node (:id state)])
       nil)
     (-> db
-        (assoc :show view)
-        (update-in [:view-state view] merge state))))
+        (assoc :view/show view)
+        (update-in [:view/state view] merge state))))
 
 
 (register-handler :scan-blocks

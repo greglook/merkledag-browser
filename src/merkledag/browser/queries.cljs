@@ -5,20 +5,18 @@
     [re-frame.core :refer [register-sub]]))
 
 
-(register-sub :showing
+(register-sub :view-state
   (fn [db _]
-    (reaction (:show @db))))
+    (reaction
+      (let [showing (:view/show @db)]
+        {:view showing
+         :state (get-in @db [:view/state showing])}))))
 
 
 (register-sub :app-config
   (fn [db _]
     (reaction {:server-url (:server-url @db)
                :ui-counter (:ui-counter @db 0)})))
-
-
-(register-sub :view-state
-  (fn [db [_ view]]
-    (reaction (get-in @db [:view-state view]))))
 
 
 (register-sub :nodes
