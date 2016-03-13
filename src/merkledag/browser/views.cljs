@@ -2,12 +2,15 @@
   (:require
     [clojure.string :as str]
     [merkledag.browser.helpers :refer [edn-block hexedit-block]]
-    [merkledag.browser.routes :refer [home-path node-path]]
+    [merkledag.browser.routes
+     :refer [home-path blocks-path node-path refs-path]]
     [multihash.core :as multihash]
     [reagent.core :as r]
     [reagent.ratom :refer-macros [reaction]]
     [re-frame.core :refer [dispatch subscribe]]))
 
+
+;; ## Block Views
 
 (defn block-list
   [blocks]
@@ -28,7 +31,7 @@
           [:td.ralign (str (:stored-at block))]]))]]])
 
 
-(defn list-blocks-view
+(defn blocks-list-view
   []
   (let [blocks (subscribe [:nodes])]
     (fn []
@@ -39,9 +42,12 @@
                 :on-click #(dispatch [:scan-blocks])}]])))
 
 
-(defn show-node-view
-  [id]
-  (let [state (subscribe [:view-state :node])
+
+;; ## Node Views
+
+(defn node-detail-view
+  []
+  (let [state (subscribe [:view-state :node-detail])
         node-id (reaction (:id @state))
         node-info (subscribe [:node-info] [node-id])]
     (fn []
@@ -76,6 +82,34 @@
            [:p "Not Found"])
          [:a {:href (home-path)} "Home"]]))))
 
+
+
+;; ## Ref Views
+
+(defn refs-list-view
+  []
+  (let [state (subscribe [:view-state :refs-list])]
+    (fn []
+      (let [_ @state]
+        [:div
+         [:h1.page-header "Refs"]
+         ; ...
+         ]))))
+
+
+(defn ref-detail-view
+  []
+  (let [state (subscribe [:view-state :ref-detail])]
+    (fn []
+      (let [rname (:name @state)]
+        [:div
+         [:h1.page-header rname]
+         ; ...
+         ]))))
+
+
+
+;; ## Application Template
 
 (defn server-url-input
   [props]
@@ -114,6 +148,27 @@
       [server-url-input {:placeholder "API server"}]]]]])
 
 
+(defn side-bar
+  "Side navigation menu."
+  []
+  (let [showing (subscribe [:showing])]
+    (fn []
+      (let [side-link (fn [views href text]
+                        [(if (contains? views @showing)
+                           :li.active
+                           :li)
+                         [:a {:href href} text]])]
+        [:div.col-sm-3.col-md-2.sidebar
+         [:ul.nav.nav-sidebar
+          (side-link #{:home} (home-path) "Overview")
+          (side-link #{:blocks-list} (blocks-path) "Blocks")
+          (side-link #{:refs-list :ref-detail} (refs-path) "Refs")]
+         [:h3 "Pins"]
+         [:ul.nav.nav-sidebar
+          ; TODO: loop display refs
+          ]]))))
+
+
 (defn browser-app
   []
   (let [show-view (subscribe [:showing])
@@ -124,16 +179,11 @@
        [nav-bar]
        [:div.container-fluid
         [:div.row
-         [:div.col-sm-3.col-md-2.sidebar
-          [:ul.nav.nav-sidebar
-           [:li.active [:a {:href (home-path)} "Overview"]]
-           [:li [:a {:href "#/"} "Blocks"]]
-           [:li [:a "..."]]]
-          [:ul.nav.nav-sidebar
-           [:li [:a "More list"]]
-           [:li [:a "..."]]]]
+         [side-bar show-view]
          [:div.col-sm-9.col-sm-offset-3.col-md-10.col-md-offset-2.main
            (case @show-view
-             :home [list-blocks-view]
-             :node [show-node-view]
+             (:home :blocks-list) [blocks-list-view]
+             :node-detail [node-detail-view]
+             :refs-list [refs-list-view]
+             :ref-detail [ref-detail-view]
              [:h1.page-header "Unknown View"])]]]])))
