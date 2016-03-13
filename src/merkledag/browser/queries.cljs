@@ -8,15 +8,17 @@
 (register-sub :view-state
   (fn [db _]
     (reaction
-      (let [showing (:view/show @db)]
+      (let [current @db
+            showing (:view/show current)]
         {:view showing
-         :state (get-in @db [:view/state showing])}))))
+         :state (get-in current [:view/state showing])
+         :counter (:view/counter current)
+         :loading (:view/loading current)}))))
 
 
 (register-sub :app-config
   (fn [db _]
-    (reaction {:server-url (:server-url @db)
-               :ui-counter (:ui-counter @db 0)})))
+    (reaction {:server-url (:server-url @db)})))
 
 
 (register-sub :nodes

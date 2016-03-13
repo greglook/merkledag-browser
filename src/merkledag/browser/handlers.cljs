@@ -6,7 +6,8 @@
     [cljs.reader :as reader]
     [merkledag.browser.db :as db]
     [multihash.core :as multihash]
-    [re-frame.core :refer [after dispatch path register-handler trim-v]]))
+    [re-frame.core :refer [after dispatch path register-handler trim-v]]
+    [schema.core :as s]))
 
 
 (reader/register-tag-parser! 'data/hash multihash/decode)
@@ -28,6 +29,22 @@
             [] string)))
 
 
+(defn check-and-throw!
+  "Throws an exception if db value doesn't match the schema."
+  [schema db]
+  (if-let [problems (s/check schema db)]
+    (throw (ex-info (str "Schema check failed: " problems)
+                    {:errors problems}))))
+
+
+;; After an event handler has run, this middleware can check that
+;; it the value in app-db still correctly matches the schema.
+(def check-db!
+  (after (partial check-and-throw! db/DatabaseSchema)))
+
+
+
+;; ## Handlers
 
 ;; Initialize the database on application startup.
 (register-handler :initialize-db
@@ -37,13 +54,13 @@
 
 
 (register-handler :touch-ui
+  [check-db!]
   (fn [db _]
-    (println "Updating current ui-counter:" (:ui-counter db))
-    (update db :ui-counter (fnil inc 0))))
+    (update db :view/counter (fnil inc 0))))
 
 
 (register-handler :set-server-url
-  [(path :server-url) trim-v]
+  [check-db! (path :server-url) trim-v]
   (fn [old-url [new-url]]
     (println "Changing server-url to:" new-url)
     new-url))
@@ -51,7 +68,7 @@
 
 ;; Set which view is showing in the interface.
 (register-handler :show-view
-  [trim-v]
+  [check-db! trim-v]
   (fn [db [view state]]
     (case view
       :node-detail (dispatch [:load-node (:id state)])
@@ -62,40 +79,40 @@
 
 
 (register-handler :scan-blocks
-  [trim-v]
+  [check-db! trim-v]
   (fn [db _]
     (println "Scanning new blocks")
     (ajax/GET (str (:server-url db) "/blocks/")
       {:response-format (edn-response-format)
        :handler #(dispatch [:update-blocks true %])
        :error-handler #(dispatch [:update-blocks false %])})
-    (assoc db :updating-blocks? true)))
+    (assoc db :view/loading true)))
 
 
 (register-handler :update-blocks
-  [trim-v]
+  [check-db! trim-v]
   (fn [db [success? response]]
     (if success?
       (do (println "Successfully fetched blocks")
           (-> (reduce #(db/update-node %1 (:id %2) %2) db (:items response))
-              (assoc :updating-blocks? false)))
+              (assoc :view/loading false)))
       (do (println "Error updating blocks:" response)
           (assoc db
-            :updating-blocks? false)))))
+            :view/loading false)))))
 
 
 (register-handler :load-block-content
-  [trim-v]
+  [check-db! trim-v]
   (fn [db [id]]
     (println "Loading block" (str id))
     (ajax/GET (str (:server-url db) "/blocks/" (multihash/base58 id))
       {:handler #(dispatch [:update-node id true {:content (str->bytes %)}])
        :error-handler #(dispatch [:update-node id false %])})
-    (assoc db :updating-blocks? true)))
+    (assoc db :view/loading true)))
 
 
 (register-handler :load-node
-  [trim-v]
+  [check-db! trim-v]
   (fn [db [id force?]]
     (if (or force? (nil? (get-in db [:nodes id ::loaded])))
       (do (println "Loading node" (str id))
@@ -104,18 +121,18 @@
             {:response-format (edn-response-format)
              :handler #(dispatch [:update-node id true (assoc % ::loaded (js/Date.))])
              :error-handler #(dispatch [:update-node id false %])})
-          (assoc db :updating-blocks? true))
+          (assoc db :view/loading true))
       (do (println "Using cached node" (str id))
           db))))
 
 
 (register-handler :update-node
-  [trim-v]
+  [check-db! trim-v]
   (fn [db [id success? data]]
     (if success?
       (do (println "Updating node" (str id) "with" data)
           (-> db
               (db/update-node id data)
-              (assoc :updating-blocks? false)))
+              (assoc :view/loading false)))
       (do (println "Failed to fetch block" (str id) ":" data)
-          (assoc db :updating-blocks? false)))))
+          (assoc db :view/loading false)))))

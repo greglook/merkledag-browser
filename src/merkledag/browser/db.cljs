@@ -37,7 +37,8 @@
    (s/optional-key :content) js/Uint8Array
    (s/optional-key :encoding) [s/Str]
    (s/optional-key :links) [LinkSchema]
-   (s/optional-key :data) s/Any})
+   (s/optional-key :data) s/Any
+   s/Keyword s/Any})
 
 
 (defschema ViewKeyword
@@ -51,7 +52,9 @@
 (defschema DatabaseSchema
   {:server-url s/Str
    :view/show ViewKeyword
-   :view/state {ViewKeyword {s/Keyword s/Any}}
+   :view/state {ViewKeyword (s/maybe {s/Keyword s/Any})}
+   (s/optional-key :view/loading) s/Bool
+   (s/optional-key :view/counter) s/Int
    :nodes {Multihash NodeInfo}})
 
 
