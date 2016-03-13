@@ -9,8 +9,12 @@
 (def initial-value
   {:server-url "http://localhost:8080"
    ; TODO: authentication credentials
+
    :view/show :home
    :view/state {}
+   :view/loading false
+   :view/counter 0
+
    ; TODO: make this an LRU cache of multihash -> node value
    :nodes {}})
 
@@ -53,8 +57,8 @@
   {:server-url s/Str
    :view/show ViewKeyword
    :view/state {ViewKeyword (s/maybe {s/Keyword s/Any})}
-   (s/optional-key :view/loading) s/Bool
-   (s/optional-key :view/counter) s/Int
+   :view/loading s/Bool
+   :view/counter s/Int
    :nodes {Multihash NodeInfo}})
 
 
