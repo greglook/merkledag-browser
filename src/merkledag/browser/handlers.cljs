@@ -136,3 +136,29 @@
               (assoc :view/loading false)))
       (do (println "Failed to fetch block" (str id) ":" data)
           (assoc db :view/loading false)))))
+
+
+
+(register-handler :fetch-refs!
+  [check-db! trim-v]
+  (fn [db _]
+    (println "Fetching current refs")
+    (ajax/GET (str (:server-url db) "/refs/"
+                   "?t=" (js/Date.)) ; FIXME: ugh, this is gross
+      {:response-format (edn-response-format)
+       :handler #(dispatch [:update-refs true %])
+       :error-handler #(dispatch [:update-refs false %])})
+    (assoc db :view/loading true)))
+
+
+(register-handler :update-refs
+  [check-db! trim-v]
+  (fn [db [success? response]]
+    (if success?
+      (do (println "Successfully fetched " (count (:items response)) " refs")
+          (assoc db
+            :refs (into {} (map (juxt :name #(dissoc % :href)) (:items response)))
+            :view/loading false))
+      (do (println "Error fetching refs:" response)
+          (assoc db
+            :view/loading false)))))

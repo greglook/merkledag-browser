@@ -16,7 +16,8 @@
    :view/counter 0
 
    ; TODO: make this an LRU cache of multihash -> node value
-   :nodes {}})
+   :nodes {}
+   :refs {}})
 
 
 
@@ -45,6 +46,13 @@
    s/Keyword s/Any})
 
 
+(defschema RefVersion
+  {:name s/Str
+   :value Multihash
+   :version s/Int
+   :time js/Date})
+
+
 (defschema ViewKeyword
   (s/enum :home
           :blocks-list
@@ -59,7 +67,8 @@
    :view/state {ViewKeyword (s/maybe {s/Keyword s/Any})}
    :view/loading s/Bool
    :view/counter s/Int
-   :nodes {Multihash NodeInfo}})
+   :nodes {Multihash NodeInfo}
+   :refs {s/Str RefVersion}})
 
 
 

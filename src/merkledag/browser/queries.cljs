@@ -29,3 +29,8 @@
 (register-sub :node-info
   (fn [db _ [id]]
     (reaction (get-in @db [:nodes id]))))
+
+
+(register-sub :ref-list
+  (fn [db _]
+    (reaction (:refs @db))))
