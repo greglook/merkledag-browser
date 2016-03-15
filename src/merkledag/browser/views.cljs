@@ -3,7 +3,7 @@
     [clojure.string :as str]
     [merkledag.browser.helpers :refer [edn-block hexedit-block]]
     [merkledag.browser.routes
-     :refer [home-path blocks-path node-path refs-path]]
+     :refer [home-path blocks-path node-path refs-path ref-path]]
     [multihash.core :as multihash]
     [reagent.core :as r]
     [reagent.ratom :refer-macros [reaction]]
@@ -15,7 +15,7 @@
 (defn block-list
   [blocks]
   [:div.table-responsive
-   [:table.table.table-striped.block-list
+   [:table.table.table-striped
     [:thead
      [:tr
       [:th "ID"]
@@ -88,23 +88,43 @@
 
 (defn refs-list-view
   []
-  (let [state (subscribe [:view-state :refs-list])]
+  (let [state (subscribe [:view-state :refs-list])
+        ref-list (subscribe [:ref-list])]
     (fn []
       (let [_ @state]
         [:div
          [:h1.page-header "Refs"]
-         ; ...
-         ]))))
+         [:div.table-responsive
+          [:table.table.table-striped
+           [:thead
+            [:tr
+             [:th "Pin"]
+             [:th "Name"]
+             [:th "Value"]
+             [:th.ralign "Version"]
+             [:th.ralign "Updated At"]]]
+           [:tbody
+            (for [[ref-name info] @ref-list]
+              (let [value (multihash/base58 (:value info))]
+                ^{:key ref-name}
+                [:tr
+                 [:td [:input {:type "checkbox"}]] ; TODO: implement pinning
+                 [:td [:a {:href (ref-path {:name ref-name})} [:strong ref-name]]]
+                 [:td [:a {:href (node-path {:id value})} value]]
+                 [:td.ralign (:version info)]
+                 [:td.ralign (str (:time info))]]))]]]
+         [:input {:type "button" :value "Refresh"
+                  :on-click #(dispatch [:fetch-refs!])}]]))))
 
 
 (defn ref-detail-view
   []
   (let [state (subscribe [:view-state :ref-detail])]
     (fn []
-      (let [rname (:name @state)]
+      (let [rname (:name (:state @state))]
         [:div
          [:h1.page-header rname]
-         ; ...
+         ; TODO: ref details
          ]))))
 
 
