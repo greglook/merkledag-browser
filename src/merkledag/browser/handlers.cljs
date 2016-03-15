@@ -49,7 +49,8 @@
 ;; Initialize the database on application startup.
 (register-handler :initialize-db
   (fn [_ _]
-    ;(dispatch [:scan-blocks])
+    (dispatch [:scan-blocks!])
+    (dispatch [:fetch-refs!])
     db/initial-value))
 
 
