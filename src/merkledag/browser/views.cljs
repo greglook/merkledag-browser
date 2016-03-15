@@ -39,7 +39,7 @@
        [:h1.page-header "Blocks"]
        [block-list @blocks]
        [:input {:type "button" :value "Refresh"
-                :on-click #(dispatch [:scan-blocks])}]])))
+                :on-click #(dispatch [:scan-blocks!])}]])))
 
 
 
@@ -56,7 +56,7 @@
          [:h1.page-header (multihash/base58 id)]
          (if-let [node @node-info]
            [:div.row
-            [:input {:type "button", :value "Reload", :on-click #(dispatch [:load-node id true])}]
+            [:input {:type "button", :value "Reload", :on-click #(dispatch [:load-node! id true])}]
             [:p (str id)]
             [:p [:strong "Size: "]  (:size node) " bytes"]
             (when (:encoding node)
@@ -78,7 +78,7 @@
             (if (:content node)
               (hexedit-block (:content node))
               [:input {:type "button" :value "Load binary content"
-                       :on-click #(dispatch [:load-block-content id])}])]
+                       :on-click #(dispatch [:load-block-content! id])}])]
            [:p "Node not found in store"])
          [:a {:href (home-path)} "Home"]]))))
 

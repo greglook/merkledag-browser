@@ -71,14 +71,14 @@
   [check-db! trim-v]
   (fn [db [view state]]
     (case view
-      :node-detail (dispatch [:load-node (:id state)])
+      :node-detail (dispatch [:load-node! (:id state)])
       nil)
     (-> db
         (assoc :view/show view)
         (update-in [:view/state view] merge state))))
 
 
-(register-handler :scan-blocks
+(register-handler :scan-blocks!
   [check-db! trim-v]
   (fn [db _]
     (println "Scanning new blocks")
@@ -101,7 +101,7 @@
             :view/loading false)))))
 
 
-(register-handler :load-block-content
+(register-handler :load-block-content!
   [check-db! trim-v]
   (fn [db [id]]
     (println "Loading block" (str id))
@@ -111,7 +111,7 @@
     (assoc db :view/loading true)))
 
 
-(register-handler :load-node
+(register-handler :load-node!
   [check-db! trim-v]
   (fn [db [id force?]]
     (if (or force? (nil? (get-in db [:nodes id ::loaded])))
