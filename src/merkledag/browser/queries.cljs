@@ -34,3 +34,8 @@
 (register-sub :ref-list
   (fn [db _]
     (reaction (:refs @db))))
+
+
+(register-sub :ref-pins
+  (fn [db _]
+    (reaction (:pinned-refs @db))))

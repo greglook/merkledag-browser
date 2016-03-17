@@ -7,15 +7,17 @@
 
 
 (def initial-value
-  {:server-url "http://localhost:8080"
-   ; TODO: authentication credentials
+  {; Persistent app configuration.
+   :server-url "http://localhost:8080"
+   :pinned-refs #{}
 
+   ; Transient view state.
    :view/show :home
    :view/state {}
    :view/loading false
    :view/counter 0
 
-   ; TODO: make this an LRU cache of multihash -> node value
+   ; Local repo representation.
    :nodes {}
    :refs {}})
 
@@ -63,6 +65,7 @@
 
 (defschema DatabaseSchema
   {:server-url s/Str
+   :pinned-refs #{s/Str}
    :view/show ViewKeyword
    :view/state {ViewKeyword (s/maybe {s/Keyword s/Any})}
    :view/loading s/Bool

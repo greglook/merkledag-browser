@@ -163,3 +163,12 @@
       (do (println "Error fetching refs:" response)
           (assoc db
             :view/loading false)))))
+
+
+(register-handler :pin-ref
+  [check-db! trim-v]
+  (fn [db [ref-name value]]
+    (println "Updating ref" ref-name "to" (pr-str value))
+    (if value
+      (update db :pinned-refs conj ref-name)
+      (update db :pinned-refs disj ref-name))))
