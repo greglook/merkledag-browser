@@ -88,43 +88,48 @@
 
 (defn refs-list-view
   []
-  (let [state (subscribe [:view-state :refs-list])
-        ref-list (subscribe [:ref-list])]
+  (let [ref-list (subscribe [:ref-list])
+        pinned-refs (subscribe [:ref-pins])]
     (fn []
-      (let [_ @state]
-        [:div
-         [:h1.page-header "Refs"]
-         [:div.table-responsive
-          [:table.table.table-striped
-           [:thead
-            [:tr
-             [:th "Pin"]
-             [:th "Name"]
-             [:th "Value"]
-             [:th.ralign "Version"]
-             [:th.ralign "Updated At"]]]
-           [:tbody
-            (for [[ref-name info] @ref-list]
-              (let [value (multihash/base58 (:value info))]
-                ^{:key ref-name}
-                [:tr
-                 [:td [:input {:type "checkbox"}]] ; TODO: implement pinning
-                 [:td [:a {:href (ref-path {:name ref-name})} [:strong ref-name]]]
-                 [:td [:a {:href (node-path {:id value})} value]]
-                 [:td.ralign (:version info)]
-                 [:td.ralign (str (:time info))]]))]]]
-         [:input {:type "button" :value "Refresh"
-                  :on-click #(dispatch [:fetch-refs!])}]]))))
+      [:div
+       [:h1.page-header "Refs"]
+       [:div.table-responsive
+        [:table.table.table-striped
+         [:thead
+          [:tr
+           [:th "Pin"]
+           [:th "Name"]
+           [:th "Value"]
+           [:th.ralign "Version"]
+           [:th.ralign "Updated At"]]]
+         [:tbody
+          (let [pins @pinned-refs]
+            (for [[ref-name info] @ref-list
+                  :let [value (multihash/base58 (:value info))]]
+              ^{:key ref-name}
+              [:tr
+               [:td [:input {:type "checkbox"
+                             :value (str "ref-pin-" ref-name)
+                             :checked (contains? pins ref-name)
+                             :on-change #(dispatch [:pin-ref ref-name (-> % .-target .-checked)])}]]
+               [:td [:a {:href (ref-path {:name ref-name})} [:strong ref-name]]]
+               [:td [:a {:href (node-path {:id value})} value]]
+               [:td.ralign (:version info)]
+               [:td.ralign (str (:time info))]]))]]]
+       ; TODO: new-ref button
+       [:input {:type "button" :value "Refresh"
+                :on-click #(dispatch [:fetch-refs!])}]])))
 
 
 (defn ref-detail-view
   []
-  (let [state (subscribe [:view-state :ref-detail])]
+  (let [view (subscribe [:view-state :ref-detail])]
     (fn []
-      (let [rname (:name (:state @state))]
+      (let [rname (:name (:state @view))]
         [:div
          [:h1.page-header rname]
-         ; TODO: ref details
+         ; TODO: ref setting, deleting
+         ; TODO: ref history
          ]))))
 
 
@@ -171,7 +176,8 @@
 (defn side-bar
   "Side navigation menu."
   []
-  (let [view (subscribe [:view-state])]
+  (let [view (subscribe [:view-state])
+        pinned-refs (subscribe [:ref-pins])]
     (fn []
       (let [side-link (fn [views href text]
                         [(if (contains? views (:view @view))
@@ -185,8 +191,9 @@
           (side-link #{:refs-list :ref-detail} (refs-path) "Refs")]
          [:h3 "Pins"]
          [:ul.nav.nav-sidebar
-          ; TODO: loop display refs
-          ]]))))
+          (for [ref-name (sort @pinned-refs)]
+            ^{:key ref-name}
+            [:li [:a {:href (ref-path {:name ref-name})} ref-name]])]]))))
 
 
 (defn browser-app
