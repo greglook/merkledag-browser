@@ -75,8 +75,8 @@
                [:h3 "Data"]
                (edn-block (:data node))])
             [:h2.sub-header "Block Content"]
-            (if (:content node)
-              (hexedit-block (:content node))
+            (if-let [content (get-in @view [:state :raw-content])]
+              (hexedit-block content)
               [:input {:type "button" :value "Load binary content"
                        :on-click #(dispatch [:load-block-content! id])}])]
            [:p "Node not found in store"])

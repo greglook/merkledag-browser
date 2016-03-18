@@ -86,13 +86,13 @@
 (register-handler :update-view
   [check-db! trim-v]
   (fn [db [view state]]
-    (update-in [:view/state view] merge state)))
+    (update-in db [:view/state view] merge state)))
 
 
 (register-handler :report-error
   [trim-v]
   (fn [db [tag err]]
-    (println "Error talking to server in" tag data)
+    (println "Error talking to server in" tag err)
     (assoc db :view/loading false)))
 
 
@@ -123,7 +123,7 @@
   (fn [db [id]]
     (println "Loading block" (str id))
     (ajax/GET (str (:server-url db) "/blocks/" (multihash/base58 id))
-      {:handler #(dispatch [:update-view :node-detail {:content (str->bytes %)}])
+      {:handler #(dispatch [:update-view :node-detail {:raw-content (str->bytes %)}])
        :error-handler #(dispatch [:report-error :load-block-content! %])})
     (assoc db :view/loading true)))
 
