@@ -70,16 +70,26 @@
 
 ;; ## View Handlers
 
+(defn- on-node-detail
+  "Handles the db and dispatches when the view is changed to show node details."
+  [db new-state]
+  (let [current-id (get-in db [:view/state :node-detail :id])
+        new-id (:id new-state)]
+    (if (and new-id (not= new-id current-id))
+      (do (dispatch [:load-node! new-id])
+          (update-in db [:view/state :node-detail] dissoc :raw-content))
+      db)))
+
+
 ;; Set which view is showing in the interface.
 (register-handler :show-view
   [check-db! trim-v]
   (fn [db [view state]]
-    (case view
-      :node-detail (dispatch [:load-node! (:id state)])
-      nil)
-    (-> db
-        (assoc :view/show view)
-        (update-in [:view/state view] merge state))))
+    (-> (case view
+          :node-detail (on-node-detail db state)
+          db)
+        (update-in [:view/state view] merge state)
+        (assoc :view/show view))))
 
 
 ;; Update the state for the given view.
