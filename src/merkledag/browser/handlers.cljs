@@ -44,7 +44,7 @@
 
 
 
-;; ## Handlers
+;; ## Configuration Handlers
 
 ;; Initialize the database on application startup.
 (register-handler :initialize-db
@@ -67,6 +67,9 @@
     new-url))
 
 
+
+;; ## View Handlers
+
 ;; Set which view is showing in the interface.
 (register-handler :show-view
   [check-db! trim-v]
@@ -78,6 +81,9 @@
         (assoc :view/show view)
         (update-in [:view/state view] merge state))))
 
+
+
+;; ## Block Server Handlers
 
 (register-handler :scan-blocks!
   [check-db! trim-v]
@@ -112,6 +118,9 @@
     (assoc db :view/loading true)))
 
 
+
+;; ## Node Server Handlers
+
 (register-handler :load-node!
   [check-db! trim-v]
   (fn [db [id force?]]
@@ -139,6 +148,8 @@
           (assoc db :view/loading false)))))
 
 
+
+;; ## Ref Server Handlers
 
 (register-handler :fetch-refs!
   [check-db! trim-v]
@@ -169,6 +180,4 @@
   [check-db! trim-v]
   (fn [db [ref-name value]]
     (println "Updating ref" ref-name "to" (pr-str value))
-    (if value
-      (update db :pinned-refs conj ref-name)
-      (update db :pinned-refs disj ref-name))))
+    (update db :pinned-refs (if value conj disj) ref-name)))
