@@ -189,6 +189,18 @@
       :view/loading false)))
 
 
+(register-handler :set-ref!
+  [check-db! trim-v]
+  (fn [db [ref-name value]]
+    (ajax/PUT (str (:server-url db) "/refs/" ref-name)
+      {:body (pr-str {:value value})
+       :headers {"Content-Type" "application/edn"}
+       :response-format (edn-response-format)
+       :handler #(dispatch [:update-refs {:items [%]}])
+       :error-handler #(dispatch [:report-error :set-ref! %])})
+    (assoc db :view/loading true)))
+
+
 (register-handler :pin-ref
   [check-db! trim-v]
   (fn [db [ref-name value]]

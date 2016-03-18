@@ -86,6 +86,31 @@
 
 ;; ## Ref Views
 
+(defn new-ref-form
+  []
+  (let [ref-name (r/atom "")
+        ref-value (r/atom "")]
+    (fn []
+      [:div.row
+       [:label
+        "Ref Name "
+        [:input {:type "text"
+                 :value @ref-name
+                 :placeholder "Name"
+                 :on-change #(reset! ref-name (-> % .-target .-value str str/trim))}]]
+       [:label
+        "Value "
+        [:input {:type "text"
+                 :value @ref-value
+                 :placeholder "Multihash ID"
+                 :on-change #(reset! ref-value (-> % .-target .-value str str/trim))}]]
+       [:input {:type "button"
+                :value "Set Ref"
+                :on-click #(do (dispatch [:set-ref! @ref-name @ref-value])
+                               (reset! ref-name "")
+                               (reset! ref-value ""))}]])))
+
+
 (defn refs-list-view
   []
   (let [ref-list (subscribe [:ref-list])
@@ -93,6 +118,7 @@
     (fn []
       [:div
        [:h1.page-header "Refs"]
+       [new-ref-form]
        [:div.table-responsive
         [:table.table.table-striped
          [:thead
