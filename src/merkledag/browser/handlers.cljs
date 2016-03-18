@@ -82,6 +82,20 @@
         (update-in [:view/state view] merge state))))
 
 
+;; Update the state for the given view.
+(register-handler :update-view
+  [check-db! trim-v]
+  (fn [db [view state]]
+    (update-in [:view/state view] merge state)))
+
+
+(register-handler :report-error
+  [trim-v]
+  (fn [db [tag err]]
+    (println "Error talking to server in" tag data)
+    (assoc db :view/loading false)))
+
+
 
 ;; ## Block Server Handlers
 
@@ -91,21 +105,17 @@
     (println "Scanning new blocks")
     (ajax/GET (str (:server-url db) "/blocks/")
       {:response-format (edn-response-format)
-       :handler #(dispatch [:update-blocks true %])
-       :error-handler #(dispatch [:update-blocks false %])})
+       :handler #(dispatch [:update-blocks %])
+       :error-handler #(dispatch [:report-error :scan-blocks! %])})
     (assoc db :view/loading true)))
 
 
 (register-handler :update-blocks
   [check-db! trim-v]
-  (fn [db [success? response]]
-    (if success?
-      (do (println "Successfully fetched blocks")
-          (-> (reduce db/update-node db (:items response))
-              (assoc :view/loading false)))
-      (do (println "Error updating blocks:" response)
-          (assoc db
-            :view/loading false)))))
+  (fn [db [response]]
+    (println "Successfully fetched blocks")
+    (-> (reduce db/update-node db (:items response))
+        (assoc :view/loading false))))
 
 
 (register-handler :load-block-content!
@@ -113,8 +123,8 @@
   (fn [db [id]]
     (println "Loading block" (str id))
     (ajax/GET (str (:server-url db) "/blocks/" (multihash/base58 id))
-      {:handler #(dispatch [:update-node id true {:content (str->bytes %)}])
-       :error-handler #(dispatch [:update-node id false %])})
+      {:handler #(dispatch [:update-view :node-detail {:content (str->bytes %)}])
+       :error-handler #(dispatch [:report-error :load-block-content! %])})
     (assoc db :view/loading true)))
 
 
@@ -129,8 +139,8 @@
           (ajax/GET (str (:server-url db) "/nodes/" (multihash/base58 id)
                          "?t=" (js/Date.)) ; FIXME: ugh, this is gross
             {:response-format (edn-response-format)
-             :handler #(dispatch [:update-node id true (assoc % ::loaded (js/Date.))])
-             :error-handler #(dispatch [:update-node id false %])})
+             :handler #(dispatch [:update-node id (assoc % ::loaded (js/Date.))])
+             :error-handler #(dispatch [:report-error :load-node! %])})
           (assoc db :view/loading true))
       (do (println "Using cached node" (str id))
           db))))
@@ -138,14 +148,11 @@
 
 (register-handler :update-node
   [check-db! trim-v]
-  (fn [db [id success? data]]
-    (if success?
-      (do (println "Updating node" (str id) "with" data)
-          (-> db
-              (db/update-node (assoc data :id id))
-              (assoc :view/loading false)))
-      (do (println "Failed to fetch block" (str id) ":" data)
-          (assoc db :view/loading false)))))
+  (fn [db [id data]]
+    (println "Updating node" (str id) "with" data)
+    (-> db
+        (db/update-node (assoc data :id id))
+        (assoc :view/loading false))))
 
 
 
@@ -158,22 +165,18 @@
     (ajax/GET (str (:server-url db) "/refs/"
                    "?t=" (js/Date.)) ; FIXME: ugh, this is gross
       {:response-format (edn-response-format)
-       :handler #(dispatch [:update-refs true %])
-       :error-handler #(dispatch [:update-refs false %])})
+       :handler #(dispatch [:update-refs %])
+       :error-handler #(dispatch [:report-error :fetch-refs! %])})
     (assoc db :view/loading true)))
 
 
 (register-handler :update-refs
   [check-db! trim-v]
-  (fn [db [success? response]]
-    (if success?
-      (do (println "Successfully fetched " (count (:items response)) " refs")
-          (assoc db
-            :refs (into {} (map (juxt :name #(dissoc % :href)) (:items response)))
-            :view/loading false))
-      (do (println "Error fetching refs:" response)
-          (assoc db
-            :view/loading false)))))
+  (fn [db [response]]
+    (println "Successfully fetched " (count (:items response)) " refs")
+    (assoc db
+      :refs (into {} (map (juxt :name #(dissoc % :href)) (:items response)))
+      :view/loading false)))
 
 
 (register-handler :pin-ref
