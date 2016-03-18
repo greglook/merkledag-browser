@@ -101,7 +101,7 @@
   (fn [db [success? response]]
     (if success?
       (do (println "Successfully fetched blocks")
-          (-> (reduce #(db/update-node %1 (:id %2) %2) db (:items response))
+          (-> (reduce db/update-node db (:items response))
               (assoc :view/loading false)))
       (do (println "Error updating blocks:" response)
           (assoc db
@@ -142,7 +142,7 @@
     (if success?
       (do (println "Updating node" (str id) "with" data)
           (-> db
-              (db/update-node id data)
+              (db/update-node (assoc data :id id))
               (assoc :view/loading false)))
       (do (println "Failed to fetch block" (str id) ":" data)
           (assoc db :view/loading false)))))

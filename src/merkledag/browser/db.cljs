@@ -41,11 +41,9 @@
   {:id Multihash
    :size s/Num
    (s/optional-key :stored-at) js/Date
-   (s/optional-key :content) js/Uint8Array
    (s/optional-key :encoding) [s/Str]
    (s/optional-key :links) [LinkSchema]
-   (s/optional-key :data) s/Any
-   s/Keyword s/Any})
+   (s/optional-key :data) s/Any})
 
 
 (defschema RefVersion
@@ -79,8 +77,9 @@
 
 (defn update-node
   "Merges the given map into the database record for a block."
-  [db id data]
-  (update-in db [:nodes id] merge data))
+  [db data]
+  (let [node-props (select-keys data [:id :size :stored-at :encoding :links :data])]
+    (update-in db [:nodes (:id data)] merge node-props)))
 
 
 
