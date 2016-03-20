@@ -146,9 +146,9 @@
   (fn [db [id force?]]
     (if (or force? (nil? (get-in db [:nodes id ::loaded])))
       (do (println "Loading node" (str id))
-          (ajax/GET (str (:server-url db) "/nodes/" (multihash/base58 id)
-                         "?t=" (js/Date.)) ; FIXME: ugh, this is gross
-            {:response-format (edn-response-format)
+          (ajax/GET (str (:server-url db) "/nodes/" (multihash/base58 id))
+            {:params {:t (js/Date.)}
+             :response-format (edn-response-format)
              :handler #(dispatch [:update-node id (assoc % ::loaded (js/Date.))])
              :error-handler #(dispatch [:report-error :load-node! %])})
           (assoc db :view/loading true))
@@ -172,8 +172,7 @@
   [check-db! trim-v]
   (fn [db _]
     (println "Fetching current refs")
-    (ajax/GET (str (:server-url db) "/refs/"
-                   "?t=" (js/Date.)) ; FIXME: ugh, this is gross
+    (ajax/GET (str (:server-url db) "/refs/")
       {:response-format (edn-response-format)
        :handler #(dispatch [:update-refs %])
        :error-handler #(dispatch [:report-error :fetch-refs! %])})
