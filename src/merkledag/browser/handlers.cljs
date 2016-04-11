@@ -38,7 +38,7 @@
 
 
 ;; After an event handler has run, this middleware can check that
-;; it the value in app-db still correctly matches the schema.
+;; the value in app-db still correctly matches the schema.
 (def check-db!
   (after (partial check-and-throw! db/DatabaseSchema)))
 
@@ -70,11 +70,20 @@
 
 ;; ## View Handlers
 
-(defn- on-node-detail
-  "Handles the db and dispatches when the view is changed to show node details."
-  [db new-state]
+(defmulti on-show
+  "Updates the db and dispatches events when the view is changed."
+  (fn [db view state] view))
+
+
+(defmethod on-show :default
+  [db _ _]
+  db)
+
+
+(defmethod on-show :node-detail
+  [db view state]
   (let [current-id (get-in db [:view/state :node-detail :id])
-        new-id (:id new-state)]
+        new-id (:id state)]
     (if (and new-id (not= new-id current-id))
       (do (dispatch [:load-node! new-id])
           (update-in db [:view/state :node-detail] dissoc :raw-content))
@@ -85,9 +94,8 @@
 (register-handler :show-view
   [check-db! trim-v]
   (fn [db [view state]]
-    (-> (case view
-          :node-detail (on-node-detail db state)
-          db)
+    (-> db
+        (on-show view state)
         (update-in [:view/state view] merge state)
         (assoc :view/show view))))
 
