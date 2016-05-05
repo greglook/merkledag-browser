@@ -154,7 +154,7 @@
   (fn [db [id force?]]
     (if (or force? (nil? (get-in db [:nodes id ::loaded])))
       (do (println "Loading node" (str id))
-          (ajax/GET (str (:server-url db) "/nodes/" (multihash/base58 id))
+          (ajax/GET (str (:server-url db) "/data/" (multihash/base58 id))
             {:params {:t (js/Date.)}
              :response-format (edn-response-format)
              :handler #(dispatch [:update-node id (assoc % ::loaded (js/Date.))])

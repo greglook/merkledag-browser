@@ -26,7 +26,7 @@
 ;; ## Database Schema
 
 (defrecord MerkleLink
-  [target name tsize])
+  [name target tsize])
 
 
 (defschema LinkSchema
