@@ -2,6 +2,7 @@
   (:require-macros
     [secretary.core :refer [defroute]])
   (:require
+    [clojure.string :as str]
     [goog.events :as events]
     [goog.history.EventType :as EventType]
     [multihash.core :as multihash]
@@ -45,6 +46,10 @@
 
 (defroute ref-path "/refs/:name" [name]
   (dispatch [:show-view :ref-detail {:name name}]))
+
+
+(defroute data-path #"/data/([^/]+)/(.*)" [root path]
+  (dispatch [:show-view :data-path {:root root, :path (str/split path #"/")}]))
 
 
 ; TODO: handle unmatched routes (404)

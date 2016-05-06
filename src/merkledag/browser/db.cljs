@@ -58,7 +58,8 @@
           :blocks-list
           :node-detail
           :refs-list
-          :ref-detail))
+          :ref-detail
+          :data-path))
 
 
 (defschema DatabaseSchema

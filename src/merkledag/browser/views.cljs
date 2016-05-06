@@ -83,6 +83,19 @@
          [:a {:href (home-path)} "Home"]]))))
 
 
+(defn data-view
+  []
+  (let [view (subscribe [:view-state :data-path])]
+    (fn []
+      (let [root (:root (:state @view))
+            path (:path (:state @view))]
+        [:div
+         [:h1.page-header root]
+         [:code (pr-str path)]
+         ; TODO: render node
+         ]))))
+
+
 
 ;; ## Ref Views
 
@@ -238,4 +251,5 @@
              :node-detail [node-detail-view]
              :refs-list [refs-list-view]
              :ref-detail [ref-detail-view]
+             :data-path [data-view]
              [:h1.page-header "Unknown View"])]]]])))
