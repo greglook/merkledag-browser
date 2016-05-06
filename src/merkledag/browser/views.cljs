@@ -218,8 +218,9 @@
   (let [view (subscribe [:view-state])
         pinned-refs (subscribe [:ref-pins])]
     (fn []
-      (let [side-link (fn [views href text]
-                        [(if (contains? views (:view @view))
+      (let [state @view
+            side-link (fn [views href text]
+                        [(if (contains? views (:view state))
                            :li.active
                            :li)
                          [:a {:href href} text]])]
@@ -232,7 +233,11 @@
          [:ul.nav.nav-sidebar
           (for [ref-name (sort @pinned-refs)]
             ^{:key ref-name}
-            [:li [:a {:href (ref-path {:name ref-name})} ref-name]])]]))))
+            [(if (and (= :data-path (:view state))
+                      (= ref-name (get-in state [:state :root])))
+               :li.active
+               :li)
+             [:a {:href (str "#/data/" ref-name "/")} ref-name]])]]))))
 
 
 (defn browser-app
