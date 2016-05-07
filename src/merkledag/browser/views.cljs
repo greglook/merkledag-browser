@@ -2,8 +2,7 @@
   (:require
     [clojure.string :as str]
     [merkledag.browser.helpers :refer [edn-block hexedit-block]]
-    [merkledag.browser.routes
-     :refer [home-path blocks-path node-path refs-path ref-path]]
+    [merkledag.browser.routes :as route]
     [multihash.core :as multihash]
     [reagent.core :as r]
     [reagent.ratom :refer-macros [reaction]]
@@ -26,7 +25,7 @@
        (let [b58-id (multihash/base58 id)]
          ^{:key (str id)}
          [:tr
-          [:td [:strong [:a {:href (node-path {:id b58-id})} b58-id]]]
+          [:td [:strong [:a {:href (route/node-path {:id b58-id})} b58-id]]]
           [:td.ralign (:size block)]
           [:td.ralign (str (:stored-at block))]]))]]])
 
@@ -40,6 +39,16 @@
        [block-list @blocks]
        [:input {:type "button" :value "Refresh"
                 :on-click #(dispatch [:scan-blocks!])}]])))
+
+
+(defn block-info-view
+  []
+  (let [view-state (subscribe [:view-state])]
+    (fn []
+      (let [id (:id @view-state)]
+        [:div
+         [:h1.page-header (multihash/base58 id)]
+         [:p "..."]]))))
 
 
 
@@ -68,7 +77,7 @@
                 (for [link (:links node)
                       :let [b58-target (multihash/base58 (:target link))]]
                   ^{:key (str (:name link) "|" (:target link))}
-                  [:li [:strong [:a {:href (node-path {:id b58-target})} b58-target]]
+                  [:li [:strong [:a {:href (route/node-path {:id b58-target})} b58-target]]
                    " " (:name link) " " [:span "(" (:tsize link) " total bytes)"]])]])
             (when (:data node)
               [:div
@@ -80,7 +89,7 @@
               [:input {:type "button" :value "Load binary content"
                        :on-click #(dispatch [:load-block-content! id])}])]
            [:p "Node not found in store"])
-         [:a {:href (home-path)} "Home"]]))))
+         [:a {:href (route/home-path)} "Home"]]))))
 
 
 (defn data-view
@@ -151,9 +160,9 @@
                              :value (str "ref-pin-" ref-name)
                              :checked (contains? pins ref-name)
                              :on-change #(dispatch [:pin-ref ref-name (-> % .-target .-checked)])}]]
-               [:td [:a {:href (ref-path {:name ref-name})} [:strong ref-name]]]
-               [:td [:a {:href (node-path {:id value})} value]]
-               [:td.ralign (:version info)]
+               [:td [:a {:href (route/data-path ref-name)} [:strong ref-name]]]
+               [:td [:a {:href (route/block-path {:id value})} value]]
+               [:td.ralign [:a {:href (route/ref-path {:name ref-name})} (:version info)]]
                [:td.ralign (str (:time info))]]))]]]
        ; TODO: new-ref button
        [:input {:type "button" :value "Refresh"
@@ -168,7 +177,7 @@
         [:div
          [:h1.page-header rname]
          ; TODO: ref setting, deleting
-         ; TODO: ref history
+         ; TODO: show ref history
          ]))))
 
 
@@ -203,10 +212,10 @@
   [:nav.navbar.navbar-inverse.navbar-fixed-top
    [:div.container-fluid
     [:div.navbar-header
-     [:a.navbar-brand {:href (home-path)} "Merkledag Browser"]]
+     [:a.navbar-brand {:href (route/home-path)} "Merkledag Browser"]]
     [:div#navbar.navbar-collapse.collapse
      [:ul.nav.navbar-nav.navbar-right
-      [:li [:a {:href (home-path)} "Blocks"]]
+      [:li [:a {:href (route/home-path)} "Blocks"]]
       [:li [:a {:href "#/settings"} "Settings"]]]
      [:form.navbar-form.navbar-right
       [server-url-input {:placeholder "API server"}]]]]])
@@ -226,9 +235,9 @@
                          [:a {:href href} text]])]
         [:div.col-sm-3.col-md-2.sidebar
          [:ul.nav.nav-sidebar
-          (side-link #{:home} (home-path) "Overview")
-          (side-link #{:blocks-list} (blocks-path) "Blocks")
-          (side-link #{:refs-list :ref-detail} (refs-path) "Refs")]
+          (side-link #{:home} (route/home-path) "Overview")
+          (side-link #{:blocks-list :block-info} (route/blocks-path) "Blocks")
+          (side-link #{:refs-list :ref-detail} (route/refs-path) "Refs")]
          [:h3 "Pins"]
          [:ul.nav.nav-sidebar
           (for [ref-name (sort @pinned-refs)]
@@ -237,7 +246,7 @@
                       (= ref-name (get-in state [:state :root])))
                :li.active
                :li)
-             [:a {:href (str "#/data/" ref-name "/")} ref-name]])]]))))
+             [:a {:href (route/data-path ref-name)} ref-name]])]]))))
 
 
 (defn browser-app
@@ -253,6 +262,7 @@
          [:div.col-sm-9.col-sm-offset-3.col-md-10.col-md-offset-2.main
            (case (:view @view)
              (:home :blocks-list) [blocks-list-view]
+             :block-info [block-info-view]
              :node-detail [node-detail-view]
              :refs-list [refs-list-view]
              :ref-detail [ref-detail-view]

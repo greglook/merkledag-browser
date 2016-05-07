@@ -56,6 +56,7 @@
 (defschema ViewKeyword
   (s/enum :home
           :blocks-list
+          :block-info
           :node-detail
           :refs-list
           :ref-detail
