@@ -80,14 +80,17 @@
   db)
 
 
-(defmethod on-show :node-detail
+(defmethod on-show :data-path
   [db view state]
-  (let [current-id (get-in db [:view/state :node-detail :id])
-        new-id (:id state)]
-    (if (and new-id (not= new-id current-id))
-      (do (dispatch [:load-node! new-id])
-          (update-in db [:view/state :node-detail] dissoc :raw-content))
-      db)))
+  (let [current-root (get-in db [:view/state view :root])
+        current-path (get-in db [:view/state view :path])
+        new-root (:root state)
+        new-path (:path state)]
+    (if (and (= current-root new-root)
+             (= current-path new-path))
+      db
+      (do (dispatch [:load-data! new-root new-path])
+          (update-in db [:view/state view] dissoc :raw-content)))))
 
 
 ;; Set which view is showing in the interface.
@@ -149,16 +152,16 @@
 
 ;; ## Node Server Handlers
 
-(register-handler :load-node!
+(register-handler :load-data!
   [check-db! trim-v]
-  (fn [db [id force?]]
+  (fn [db [root path force?]]
     (if (or force? (nil? (get-in db [:nodes id ::loaded])))
       (do (println "Loading node" (str id))
           (ajax/GET (str (:server-url db) "/data/" (multihash/base58 id))
             {:params {:t (js/Date.)}
              :response-format (edn-response-format)
              :handler #(dispatch [:update-node id (assoc % ::loaded (js/Date.))])
-             :error-handler #(dispatch [:report-error :load-node! %])})
+             :error-handler #(dispatch [:report-error :load-data! %])})
           (assoc db :view/loading true))
       (do (println "Using cached node" (str id))
           db))))

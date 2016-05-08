@@ -25,7 +25,7 @@
        (let [b58-id (multihash/base58 id)]
          ^{:key (str id)}
          [:tr
-          [:td [:strong [:a {:href (route/node-path {:id b58-id})} b58-id]]]
+          [:td [:strong [:a {:href (route/block-path {:id b58-id})} b58-id]]]
           [:td.ralign (:size block)]
           [:td.ralign (str (:stored-at block))]]))]]])
 
@@ -54,15 +54,34 @@
 
 ;; ## Node Views
 
-(defn node-detail-view
+(defn- node-links
+  [root base-path node]
+  (when (:links node)
+    [:div
+     [:h3 "Links"]
+     [:ul
+      (for [link (:links node)
+            :let [b58-target (multihash/base58 (:target link))]]
+        ^{:key (str (:name link) "|" (:target link))}
+        [:li [:strong [:a {:href (route/block-path {:id b58-target})} b58-target]]
+         " " (if (:name link)
+               [:a {:href (route/data-path root (conj base-path (:name link)))} (:name link)]
+               nil)
+         " " [:span "(" (:tsize link) " total bytes)"]])]]))
+
+
+(defn data-view
   []
-  (let [view (subscribe [:view-state])
+  (let [view (subscribe [:view-state :data-path])
         node-id (reaction (get-in @view [:state :id]))
         node-info (subscribe [:node-info] [node-id])]
     (fn []
-      (let [id @node-id]
+      (let [id @node-id
+            {:keys [root path]} (:state @view)]
         [:div
-         [:h1.page-header (multihash/base58 id)]
+         [:h1.page-header root]
+         [:code (pr-str path)]
+         ; TODO: render node
          (if-let [node @node-info]
            [:div.row
             [:input {:type "button", :value "Reload", :on-click #(dispatch [:load-node! id true])}]
@@ -70,15 +89,7 @@
             [:p [:strong "Size: "]  (:size node) " bytes"]
             (when (:encoding node)
               [:p [:strong "Encoding: "]  (interpose " " (map #(vary-meta (vector :code %) assoc :key %) (:encoding node)))])
-            (when (:links node)
-              [:div
-               [:h3 "Links"]
-               [:ul
-                (for [link (:links node)
-                      :let [b58-target (multihash/base58 (:target link))]]
-                  ^{:key (str (:name link) "|" (:target link))}
-                  [:li [:strong [:a {:href (route/node-path {:id b58-target})} b58-target]]
-                   " " (:name link) " " [:span "(" (:tsize link) " total bytes)"]])]])
+            [node-links root path node]
             (when (:data node)
               [:div
                [:h3 "Data"]
@@ -88,21 +99,7 @@
               (hexedit-block content)
               [:input {:type "button" :value "Load binary content"
                        :on-click #(dispatch [:load-block-content! id])}])]
-           [:p "Node not found in store"])
-         [:a {:href (route/home-path)} "Home"]]))))
-
-
-(defn data-view
-  []
-  (let [view (subscribe [:view-state :data-path])]
-    (fn []
-      (let [root (:root (:state @view))
-            path (:path (:state @view))]
-        [:div
-         [:h1.page-header root]
-         [:code (pr-str path)]
-         ; TODO: render node
-         ]))))
+           [:p "Node not found in store"])]))))
 
 
 
@@ -262,8 +259,7 @@
          [:div.col-sm-9.col-sm-offset-3.col-md-10.col-md-offset-2.main
            (case (:view @view)
              (:home :blocks-list) [blocks-list-view]
-             :block-info [block-info-view]
-             :node-detail [node-detail-view]
+             :block-info [data-view]
              :refs-list [refs-list-view]
              :ref-detail [ref-detail-view]
              :data-path [data-view]
